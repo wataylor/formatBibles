@@ -1,0 +1,138 @@
+package asst.formatWord.utils;
+
+import org.apache.poi.xwpf.usermodel.*;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.*;
+import java.io.FileOutputStream;
+import java.math.BigInteger;
+
+/** A set of magic spells to add new items to a XWPFDocument doc.</p>
+ * 
+ * <p>Footnotes and bookmarks are numbered starting at one in the document.
+ * The footnote and bookmark counters are not thread-safe.
+ * When the document is inserted into another Word document, Word
+ * renumbers bookmarks and footnotes to fit with footnotes and
+ * bookmarks which are already there.  If a bookmark name conflicts
+ * with a bookmark which is already in the document, which one is kept doesn't
+ * matter - either way, the results won't be what you expect.</p>
+ * <p>The unit test program shows how to poke around in the Word .xml
+ * model in great detail.  That structure is sufficiently arcane that
+ * the methods in this file for dealing with them can rightfully
+ * be regarded as magic spells.
+ *
+ * @author GitHub CoPilot
+ * @since 2025 12
+ */
+public class WordDocxUtils {
+
+  private static int footnoteCounter = 1;  // not thread safe
+  private static int bookmarkCounter = 1;  // not thread safe
+
+  /** Superscript spell */
+  public static XWPFParagraph addSuperscriptParagraph(XWPFDocument doc,
+      String superText,
+      String normalText) {
+    XWPFParagraph para = doc.createParagraph();
+    XWPFRun superRun = para.createRun();
+    superRun.setText(superText);
+    superRun.setSubscript(VerticalAlign.SUPERSCRIPT);
+
+    XWPFRun normalRun = para.createRun();
+    normalRun.setText(normalText);
+    return para;
+  }
+
+  /** Footnote spell */
+  public static void addFootnote(XWPFParagraph para, XWPFDocument doc, String footnoteText) {
+    XWPFRun run = para.createRun();
+    CTFtnEdnRef ref = run.getCTR().addNewFootnoteReference();
+    ref.setId(BigInteger.valueOf(footnoteCounter));
+
+    XWPFFootnote footnote = doc.createFootnote();
+    footnote.getCTFtnEdn().setId(BigInteger.valueOf(footnoteCounter));
+    footnote.createParagraph().createRun().setText(footnoteText);
+
+    footnoteCounter++;
+  }
+
+  /** Bookmark spell */
+  public static void addBookmarkParagraph(XWPFDocument doc,
+      String bookmarkName,
+      String text) {
+    XWPFParagraph para = doc.createParagraph();
+    XWPFRun run = para.createRun();
+    run.setText(text);
+
+    CTBookmark bookmarkStart = para.getCTP().addNewBookmarkStart();
+    bookmarkStart.setId(BigInteger.valueOf(bookmarkCounter));
+    bookmarkStart.setName(bookmarkName);
+
+    para.getCTP().addNewBookmarkEnd().setId(BigInteger.valueOf(bookmarkCounter));
+    bookmarkCounter++;
+  }
+
+  /** Index entry spell */
+  public static void addIndexEntry(XWPFParagraph para, String entryText) {
+    XWPFRun runBegin = para.createRun();
+    CTFldChar fldCharBegin = runBegin.getCTR().addNewFldChar();
+    fldCharBegin.setFldCharType(STFldCharType.BEGIN);
+
+    XWPFRun runInstr = para.createRun();
+    runInstr.getCTR().addNewInstrText().setStringValue(" XE \"" + entryText + "\" ");
+
+    XWPFRun runSep = para.createRun();
+    CTFldChar fldCharSep = runSep.getCTR().addNewFldChar();
+    fldCharSep.setFldCharType(STFldCharType.SEPARATE);
+
+    XWPFRun runEnd = para.createRun();
+    CTFldChar fldCharEnd = runEnd.getCTR().addNewFldChar();
+    fldCharEnd.setFldCharType(STFldCharType.END);
+  }
+
+  /** Split heading spell */
+  public static void addSplitHeading(XWPFDocument doc,
+      String headingText,
+      String trailingText) {
+    XWPFParagraph headingPara = doc.createParagraph();
+    headingPara.setStyle("Heading2");
+    headingPara.createRun().setText(headingText);
+
+    XWPFParagraph normalPara = doc.createParagraph();
+    normalPara.setStyle("Normal");
+    normalPara.setSpacingBefore(0);
+    normalPara.setSpacingAfter(0);
+    normalPara.createRun().setText(trailingText);
+  }
+
+  /**
+   * Adds a hyperlink run in the given paragraph that points to a bookmark.
+   * @param para        the paragraph to add the hyperlink into
+   * @param bookmarkName the name of the bookmark to jump to
+   * @param linkText     the visible text of the hyperlink
+   */
+  public static void addHyperlinkToBookmark(XWPFParagraph para,
+      String bookmarkName,
+      String linkText) {
+    // Create the hyperlink element
+    CTHyperlink ctHyperlink = para.getCTP().addNewHyperlink();
+    ctHyperlink.setAnchor(bookmarkName); // anchor = bookmark name
+
+    // Create a run with hyperlink styling
+    CTR ctr = CTR.Factory.newInstance();
+    CTRPr rpr = ctr.addNewRPr();
+    rpr.addNewColor().setVal("0000FF"); // blue
+    rpr.addNewU().setVal(STUnderline.SINGLE); // underline
+
+    ctr.addNewT().setStringValue(linkText);
+
+    // Attach run to hyperlink
+    ctHyperlink.addNewR().set(ctr);
+  }
+
+  // Example save method
+  public static void saveDoc(XWPFDocument doc, String filename) throws Exception {
+    try (FileOutputStream out = new FileOutputStream(filename)) {
+      doc.write(out);
+    }
+  }
+
+}
