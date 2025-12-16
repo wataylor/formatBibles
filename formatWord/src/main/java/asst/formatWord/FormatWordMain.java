@@ -27,6 +27,7 @@ import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFHeader;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTBookmark;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTColumns;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTJc;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTP;
@@ -90,6 +91,14 @@ public class FormatWordMain {
       "count=50",
       "+help",
   };
+
+  private static int footnoteCounter = 1;  // not thread safe
+  private static int bookmarkCounter = 1;  // not thread safe
+
+  /** String that lists all verses that changed in format ddBBB c:v
+   * like the book, chapter, and verse flags at the beginning of a
+   * verse in the electronic bible. */
+  public static String verseChangeList = null;
 
   /**  List of file names which are to be ignored.
    */
@@ -185,6 +194,11 @@ public class FormatWordMain {
 	System.err.println("Input path is not a directory: " + inputDir);
 	System.exit(1);
       }
+      Path crefFile = inputDir.resolve("explanation.txt");
+      List<String> cref = Files.readAllLines(crefFile, StandardCharsets.UTF_8);
+      /* The first line of the explanation tells how many verses changed.
+       * The second line is the underscore-separated list of verses that changed. */
+      verseChangeList = cref.get(1);
 
       // PrintWriter explanationWriter = new PrintWriter(new FileWriter(new File(outputDir.toFile(), "explanation.txt")));
 
@@ -213,7 +227,7 @@ public class FormatWordMain {
       CTSectPr templateSectPr = templateCtp.addNewPPr().addNewSectPr();
       templateSectPr.addNewType().setVal(STSectionMark.CONTINUOUS);
 
-      // Set page numbering format to lowercase Roman numerals
+      // Set page numbering format to lowercase Arabic numerals
       CTPageNumber pgNum = templateSectPr.addNewPgNumType();
       pgNum.setFmt(org.openxmlformats.schemas.wordprocessingml.x2006.main.STNumberFormat.LOWER_ROMAN);
 
@@ -388,6 +402,9 @@ public class FormatWordMain {
   }
 
   /** Given one verse, publish it as called for in the spreadsheet
+   * If the 2-digit book number and the 3-character book abbreviation and
+   * the chapter number : verse number are found in the verseChangedList,
+   * the paragraph containing the verse gets a bookmark.
    * @param bkno 2-digit book number
    * @param line verse with chapter abbreviation, space, chapter:verse 2 spaces,
    * then the verse text.
@@ -400,7 +417,12 @@ public class FormatWordMain {
     if (line.length() < 7) {
       return null;
     }
-
+    int spaceIndex = line.indexOf("  ");
+    if (spaceIndex == -1) { return null; }
+    String bookmark = bkno + line.substring(0, spaceIndex);
+    if (verseChangeList.indexOf(bookmark) < 0) {
+      bookmark = null;
+    }
     // Extract chapter and verse numbers and text
     String[] parts = line.substring(4).split(":", 2);
     if (parts.length < 2) {
@@ -411,7 +433,7 @@ public class FormatWordMain {
 
     // Split verse number from text
     String remaining = parts[1];
-    int spaceIndex = remaining.indexOf(' ');
+    spaceIndex = remaining.indexOf(' ');
     if (spaceIndex == -1) {
       return null;
     }
@@ -434,6 +456,7 @@ public class FormatWordMain {
       run.setText("Chapter " + chapterNum);
 
       // Add verse with superscript verse number  // TODO drop cap
+      // If bookmark is not null, it is a bookmark that must be set.
       if (verseText.length() > 0) {
 	XWPFParagraph versePara = doc.createParagraph();
 	versePara.setStyle("FAH");
@@ -446,6 +469,9 @@ public class FormatWordMain {
 	// Add verse text
 	XWPFRun textRun = versePara.createRun();
 	textRun.setText(verseText);
+	if (bookmark != null) {
+	  setBookmark(versePara, bookmark);
+	}
       }
     } else {
       // Add verse with superscript verse number
@@ -461,8 +487,20 @@ public class FormatWordMain {
 	// Add verse text
 	XWPFRun textRun = versePara.createRun();
 	textRun.setText(verseText);
+	if (bookmark != null) {
+	  setBookmark(versePara, bookmark);
+	}
       }
     }
     return null;
+  }
+
+  private static void setBookmark(XWPFParagraph para, String bookmarkName) {
+    CTBookmark bookmarkStart = para.getCTP().addNewBookmarkStart();
+    bookmarkStart.setId(BigInteger.valueOf(bookmarkCounter));
+    bookmarkStart.setName(bookmarkName);
+
+    para.getCTP().addNewBookmarkEnd().setId(BigInteger.valueOf(bookmarkCounter));
+    bookmarkCounter++;
   }
 }
