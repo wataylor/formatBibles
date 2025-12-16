@@ -41,6 +41,7 @@ import org.openxmlformats.schemas.wordprocessingml.x2006.main.STSectionMark;
 
 import asst.common.DescribeArgs;
 import asst.common.MainArgs;
+import asst.formatWord.utils.WordDocxUtils;
 import asst.hssf.WorkbookManager;
 
 /** Read input files and change words in them as specified by the
@@ -273,6 +274,19 @@ public class FormatWordMain {
 	  System.exit(1);
 	}
       }
+      /*  Finished generating all the chapters, time to start the index */
+      documentChapterStart(doc, "Lists of Word Changes",
+	  "All verses that were changed:");
+      addParagraphOfChangeLinks(doc, "", verseChangeList);
+      end1ColumnSection(doc);
+      for (int i = 2; i < cref.size(); i++) {
+	String aCref = cref.get(i);
+	int ix = aCref.indexOf(":");
+	if (ix < 0) { continue; }
+	addParagraphOfChangeLinks(doc, aCref.substring(0, ix),
+	    aCref.substring(ix + 2));
+      }
+      endTheChapter(0, wm, doc);
 
       // Write and close the document
       try (FileOutputStream out = new FileOutputStream(new File(outputPlace.toFile(), "Injected.docx"))) {
@@ -290,6 +304,38 @@ public class FormatWordMain {
 	if (wb != null) { wb.close(); }
       } catch (Exception e) {
 	System.out.println("ERR closing work book " + e.getMessage());
+      }
+    }
+  }
+
+  /** Add a list of hyperlinks to the verses that were changed.
+   * @param doc
+   * @param change Name of the change, might be blank
+   * @param verseChangeList underscore-separated list of verse references.
+   * The last character might be an underscore.
+   */
+  public static void addParagraphOfChangeLinks(XWPFDocument doc, String change, String verseChangeList) {
+    // Create paragraph in style FAH
+    XWPFParagraph paragraph = doc.createParagraph();
+    paragraph.setStyle("FAH");
+
+    // If change is non-empty, add it followed by a space
+    if (change != null && !change.isEmpty()) {
+      XWPFRun run = paragraph.createRun();
+      run.setText(change + " ");
+    }
+
+    /* Split verseChangeList on underscores
+     * and create hyperlinks for each bookmark */
+    String[] bookmarks = verseChangeList.split("_");
+    for (String bookmark : bookmarks) {
+      if (bookmark != null && !bookmark.isEmpty()) {
+	String bookMarkLabel = bookmark.substring(2); // Skip the 2-digit book number
+	String bookmarkName = bookmark.replace(' ', '_'); // Replace spaces with underscores for bookmark name
+	// Create hyperlink to the bookmark within the document
+	WordDocxUtils.addHyperlinkToBookmark(paragraph, bookmarkName, bookMarkLabel);
+	// Add space after hyperlink
+	paragraph.createRun().setText("  ");
       }
     }
   }
@@ -336,6 +382,39 @@ public class FormatWordMain {
     String chapTitle = getChapterTitle(wm, chapNum);
     String chapComment = getChapterIntro(wm, chapNum);
 
+    documentChapterStart(doc, chapTitle, chapComment);
+
+    end1ColumnSection(doc);
+  }
+
+  /**The one-column chapter heading needs to be ended so that
+   * the following 2-column section can appear.
+   * @param doc The document
+   */
+  public static void end1ColumnSection(XWPFDocument doc) {
+    // Create empty paragraph that will end the 1-column section and start 2-column section
+    XWPFParagraph columnBreakPara = doc.createParagraph();
+    CTP columnCtp = columnBreakPara.getCTP();
+    CTSectPr columnSectPr = columnCtp.addNewPPr().addNewSectPr();
+
+    // This sectPr defines the PREVIOUS section (1-column with headers)
+    columnSectPr.addNewType().setVal(STSectionMark.CONTINUOUS);
+
+    // Set to 1 column for the previous section
+    CTColumns columns1 = columnSectPr.addNewCols();
+    columns1.setNum(BigInteger.valueOf(1));
+
+    // Set page size and margins
+    setPageSizeAndMargins(columnSectPr);
+  }
+
+  /** Create a 1-column chapter start with a H1 paragraph and an
+   * optional comment.
+   * @param doc Document
+   * @param chapTitle Chapter title to go into the TOC
+   * @param chapComment Optional chapter introduction
+   */
+  public static void documentChapterStart(XWPFDocument doc, String chapTitle, String chapComment) {
     // Create headers for this section
     XWPFHeaderFooterPolicy policy = doc.createHeaderFooterPolicy();
 
@@ -368,21 +447,6 @@ public class FormatWordMain {
       commentPara.setStyle("FAH");
       commentPara.createRun().setText(chapComment);
     }
-
-    // Create empty paragraph that will end the 1-column section and start 2-column section
-    XWPFParagraph columnBreakPara = doc.createParagraph();
-    CTP columnCtp = columnBreakPara.getCTP();
-    CTSectPr columnSectPr = columnCtp.addNewPPr().addNewSectPr();
-
-    // This sectPr defines the PREVIOUS section (1-column with headers)
-    columnSectPr.addNewType().setVal(STSectionMark.CONTINUOUS);
-
-    // Set to 1 column for the previous section
-    CTColumns columns1 = columnSectPr.addNewCols();
-    columns1.setNum(BigInteger.valueOf(1));
-
-    // Set page size and margins
-    setPageSizeAndMargins(columnSectPr);
   }
 
   private static String getChapterIntro(WorkbookManager wm, int chapNum) {
@@ -420,7 +484,7 @@ public class FormatWordMain {
     int spaceIndex = line.indexOf("  ");
     if (spaceIndex == -1) { return null; }
     String bookmark = bkno + line.substring(0, spaceIndex);
-    if (verseChangeList.indexOf(bookmark) < 0) {
+    if (verseChangeList.indexOf(bookmark + "_") < 0) {
       bookmark = null;
     }
     // Extract chapter and verse numbers and text
