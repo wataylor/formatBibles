@@ -19,8 +19,8 @@ class WordUpgradeUtilsTest {
   public static final String jon1621newest = "JOH 16:21  A woman when she is giving birth [in travail] is sad [hath sorrow], because her hour is come: but as soon as she is delivered of the child, she remembereth no more the pain [anguish], for joy that a man is born into the world.";
   public static final String honorable = "Hez 2:22  honour to whom Honour to whom honour";
   public static final String honorablenew = "Hez 2:22  honor to whom Honor to whom honor";
-  public static final String smiteMaybe = "JOH 16:22  smite mite";
-  public static final String smitten = "JOH 16:22  smite tiny amount [mite]";
+  public static final String smiteMaybe = "JOH 16:22  smite mite now";
+  public static final String smitten = "JOH 16:22  smite tiny amount [mite] now";
   public static PassingItems pi;
 
   @BeforeAll
