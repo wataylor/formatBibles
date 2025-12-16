@@ -156,12 +156,11 @@ public class GentlerKBJMain {
 	  System.exit(1);
 	}
       }
-      explanationWriter.println("Total files processed: " + processed);
-
-      explanationWriter.println("\n" + WordUpgradeUtils.verseChanges.size() 
-      + " verses changed out of " + verseCount + ".");
+      explanationWriter.println("#" + processed + " files processed,"
+	  + " " + WordUpgradeUtils.verseChanges.size()
+	  + " verses changed out of " + verseCount + ".");
       for (String v : WordUpgradeUtils.verseChanges) {
-	explanationWriter.print(v.substring(2) + " ");
+	explanationWriter.print(v + "_");
       }
       explanationWriter.println("\n");
 

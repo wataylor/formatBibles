@@ -4,6 +4,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** Utilities to help replace archaic words with more modern words
  * @author Material Gain
@@ -31,17 +33,16 @@ public class WordUpgradeUtils {
    */
   public static int findWordIndex(String line, String word) {
     int ix = line.indexOf(word);
-    if (ix < 0) { // did not find it
+    if (ix < 0) { // did not find it, this is by far the usual case
       return ix;
     }
-    /* The word is not found if the character after it is alphabetic.
-     * let would match lets but the s is alphabetic so it does not */
-    try {
-      if (Character.isAlphabetic(line.charAt(ix + word.length()))) {
-	return -1;
-      }
-    } catch (Exception e) {
-      return ix; // the word ends the input line so it matches.
+    /* The word was found somewhere, but it might not be a
+     * stand alone word.  Given that it is in the line, it is
+     * worth the time to create a pattern */
+    Pattern pattern = Pattern.compile("\\b" + Pattern.quote(word) + "\\b");
+    Matcher matcher = pattern.matcher(line);
+    if (matcher.find()) {
+        ix = matcher.start();  // Position of match
     }
     /* The word is not found if it is found anywhere inside [] */
     int iy = line.indexOf("]", ix);
@@ -71,7 +72,6 @@ public class WordUpgradeUtils {
 	  + pi.line.substring(ix + pi.oldWord.length());
       pi.lineLowerCase = pi.line.toLowerCase();
       recordCref(pi);
-      return ;
     }
   }
 
@@ -102,15 +102,16 @@ public class WordUpgradeUtils {
    * @param pi
    */
   public static void recordCref(PassingItems pi) {
-    verseChanges.add(pi.bkno + pi.bookChapVerse);
+    String change = pi.bkno + pi.bookChapVerse;
+    verseChanges.add(change);
     String wordKey = pi.oldWord + " -> " + pi.newWord;
     StringBuilder sb = wordChanges.get(wordKey);
     if (sb == null) {
 	sb = new StringBuilder();
 	wordChanges.put(wordKey, sb);
     }
-    if (sb.indexOf(pi.bookChapVerse) < 0) { // might replace more than once
-      sb.append(pi.bookChapVerse + " ");
+    if (sb.indexOf(change) < 0) { // might replace more than once
+      sb.append(change + "_");
     }
     pi.isDirty = true;
   }
