@@ -93,8 +93,10 @@ public class FormatWordMain {
       "+help",
   };
 
-  private static int footnoteCounter = 1;  // not thread safe
-  private static int bookmarkCounter = 1;  // not thread safe
+  /** Footnotes must be created starting from 1 */
+  public static int footnoteCounter = 1;  // not thread safe
+  /** Bookmarks must be created starting from 1 */
+  public static int bookmarkCounter = 1;  // not thread safe
 
   /** String that lists all verses that changed in format ddBBB c:v
    * like the book, chapter, and verse flags at the beginning of a
@@ -108,6 +110,7 @@ public class FormatWordMain {
     skip_files.add("explanation.txt");
   }
 
+  /** List all sheets that must be found in the Excel spreadsheet*/
   public static final String [] needed_sheets = {
       "WordChanges", "BookNames", "Footnotes",
   };
@@ -275,9 +278,16 @@ public class FormatWordMain {
 	}
       }
       /*  Finished generating all the chapters, time to start the index */
+      long spaces = verseChangeList.chars()
+	  .filter(ch -> ch == ' ')
+	  .count();
       documentChapterStart(doc, "Lists of Word Changes",
-	  "All verses that were changed:");
+	  "" + spaces + " verses that were changed:");
       addParagraphOfChangeLinks(doc, "", verseChangeList);
+      XWPFParagraph paragraph = doc.createParagraph();
+      paragraph.setStyle("Heading2");
+      paragraph.createRun().setText("Verses changed by each archaic word replacement:");
+      
       end1ColumnSection(doc);
       for (int i = 2; i < cref.size(); i++) {
 	String aCref = cref.get(i);
@@ -376,6 +386,11 @@ public class FormatWordMain {
     setPageSizeAndMargins(sectPr);
   }
 
+  /** Add paragraphs and headings to start the next chapter of the book
+   * @param chapNum Chapter number
+   * @param wm Workbook manager
+   * @param doc .docx file
+   */
   public static void startNextChapter(int chapNum, WorkbookManager wm, XWPFDocument doc) {
     /* Start the new chapter in a new one-column section.  */
     /* The chapter title is used for the page headers */
