@@ -43,6 +43,8 @@ public class WordUpgradeUtils {
     Matcher matcher = pattern.matcher(line);
     if (matcher.find()) {
         ix = matcher.start();  // Position of match
+    } else {
+      return -1;
     }
     /* The word is not found if it is found anywhere inside [] */
     int iy = line.indexOf("]", ix);

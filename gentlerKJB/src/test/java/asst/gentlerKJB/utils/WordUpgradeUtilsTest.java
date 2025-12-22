@@ -21,6 +21,7 @@ class WordUpgradeUtilsTest {
   public static final String honorablenew = "Hez 2:22  honor to whom Honor to whom honor";
   public static final String smiteMaybe = "JOH 16:22  smite mite now";
   public static final String smitten = "JOH 16:22  smite tiny amount [mite] now";
+  public static final String smiteCheek= "MAT 5:39  But I say unto you, That ye resist not evil: but whosoever shall smite thee on thy right cheek, turn to him the other also.";
   public static PassingItems pi;
 
   @BeforeAll
@@ -101,8 +102,19 @@ class WordUpgradeUtilsTest {
   }
 
   @Test
+  void testSmite() { // make sure that mite does not match smite
+    pi = new PassingItems(smiteCheek, "w", "w");
+    pi.bkno = "40";
+    pi.setWords("mite", "tinyAmount");
+    WordUpgradeUtils.modernizeWord(pi);
+    assertFalse(pi.isDirty);
+    assertEquals(smiteCheek, pi.getEditedLine(), "mite not in smite");
+  }
+
+  @Test
   void testReplaceWord() {
     pi = new PassingItems(honorable, "honour", "honor");
+    pi.bkno = "01";
     WordUpgradeUtils.replaceWord(pi);
     assertTrue(pi.isDirty);
     assertEquals(honorablenew, pi.getEditedLine(), "upgrading honour");

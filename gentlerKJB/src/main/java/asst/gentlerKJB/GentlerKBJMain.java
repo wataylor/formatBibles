@@ -210,6 +210,11 @@ public class GentlerKBJMain {
       pi.setWords(oldWord, newWord);
       if ((verb != null) && ("Not mark".equals(verb))) {
 	WordUpgradeUtils.replaceWord(pi);
+      } else if ((verb != null) && verb.startsWith("Only in")) {
+	/* Modernize the word only in specified verses */
+	if (verb.indexOf(pi.bookChapVerse) > 0) {
+	  WordUpgradeUtils.modernizeWord(pi);
+	}
       } else {
 	WordUpgradeUtils.modernizeWord(pi);
       }
