@@ -298,6 +298,9 @@ public class FormatWordMain {
       }
       endTheChapter(0, wm, doc);
 
+      // Set document to update fields (including table of contents) when opened
+      // WordDocxUtils.setUpdateFieldsOnOpen(doc);
+
       // Write and close the document
       try (FileOutputStream out = new FileOutputStream(new File(outputPlace.toFile(), "Injected.docx"))) {
 	doc.write(out);

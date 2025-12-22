@@ -128,6 +128,24 @@ public class WordDocxUtils {
     ctHyperlink.addNewR().set(ctr);
   }
 
+  /**
+   * Sets the document to update all fields (including table of contents) when opened in Word.
+   * This is necessary because Apache POI cannot directly update field codes.
+   * @param doc the document to configure
+   */
+  public static void setUpdateFieldsOnOpen(XWPFDocument doc) {
+    try {
+      org.apache.xmlbeans.XmlCursor cursor = doc.getDocument().newCursor();
+      cursor.toFirstChild();
+      cursor.beginElement("settings", "http://schemas.openxmlformats.org/wordprocessingml/2006/main");
+      cursor.beginElement("updateFields", "http://schemas.openxmlformats.org/wordprocessingml/2006/main");
+      cursor.insertAttributeWithValue("val", "true");
+      cursor.dispose();
+    } catch (Exception e) {
+      System.err.println("Warning: Could not set updateFields property: " + e.getMessage());
+    }
+  }
+
   // Example save method
   public static void saveDoc(XWPFDocument doc, String filename) throws Exception {
     try (FileOutputStream out = new FileOutputStream(filename)) {
