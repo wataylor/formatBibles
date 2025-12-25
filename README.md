@@ -20,11 +20,17 @@ Now the birth of Jesus Christ was like this [on this wise]: When as his mother M
 
 These updates make no spiritual or doctrinal changes whatsoever. If you find any changes that affect doctrine, **PLEASE SAY SO!!** and we’ll fix it.
 
+Word changes are driven by an Excel file in [this Google Drive folder](https://drive.google.com/drive/folders/1hdicavzgwZQDg9vzcX0BI7uwMEMPS6D2?usp=drive_link):
+
+The 1769 King James chapters whose archaic words are replaced is in the subfolder **KJVText**.
+
 ## formatWord
 
 This program reads the chapter files modified by **gentlerKJB** and formats them into a .docx file.  Each chapter gets a section with a one-column chapter heading and a two-column section for the verses in the chapter.
 
 The words being changed are listed in the Excel file **KJVWordUpdates.xlsx**. **GentleKJBNT.docx** is a template that defines styles, footers, table of contents, and the introduction. **Injected.xlsx** is created by injecting the modified verses into the template at the proper place.
+
+The spreadsheet also defines footnotes for specific words in specific verses on the **Footnotes** sheet and a list of verse comments which are added to the Table of Contents in the **TOCVerses** sheet.  These sheets are explained in more detail in **The Gentle King James Project** description in the folder.
 
 The program adds a list of all verses that were changed with hyperlinks to the changed verses. That list is followed by a list for each archaic word with hyperlinks to the verses it changed. This should help verify all the changes.
 
