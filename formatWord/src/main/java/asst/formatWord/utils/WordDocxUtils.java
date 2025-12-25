@@ -41,9 +41,10 @@ public class WordDocxUtils {
     return para;
   }
 
-  /** Footnote spell */
+  /** Footnote spells */
   public static void addFootnote(XWPFParagraph para, XWPFDocument doc, String footnoteText) {
     XWPFRun run = para.createRun();
+    run.setStyle("Footnote Reference");
     CTFtnEdnRef ref = run.getCTR().addNewFootnoteReference();
     ref.setId(BigInteger.valueOf(footnoteCounter));
 
@@ -52,6 +53,84 @@ public class WordDocxUtils {
     footnote.createParagraph().createRun().setText(footnoteText);
 
     footnoteCounter++;
+  }
+
+  /** Add a paragraph with a footnote reference at a specified position in the text 
+   * @param para The paragraph to add the footnote to
+   * @param doc The document (needed to create the footnote)
+   * @param text The paragraph text
+   * @param where Position in the text where the footnote reference should appear (0 = beginning, text.length() or greater = end)
+   * @param footnoteText The text of the footnote
+   */
+  public static void addFootnote(XWPFParagraph para, XWPFDocument doc, String text, int where,
+      String footnoteText) {
+    // Ensure where is within valid bounds
+    if (where < 0) {
+      where = 0;
+    }
+    if (where > text.length()) {
+      where = text.length();
+    }
+
+    // If footnote goes at the beginning
+    if (where == 0) {
+      // Create run with footnote reference
+      XWPFRun footnoteRun = para.createRun();
+      footnoteRun.setStyle("Footnote Reference");
+      CTFtnEdnRef ref = footnoteRun.getCTR().addNewFootnoteReference();
+      ref.setId(BigInteger.valueOf(footnoteCounter));
+
+      XWPFFootnote footnote = doc.createFootnote();
+      footnote.getCTFtnEdn().setId(BigInteger.valueOf(footnoteCounter));
+      footnote.createParagraph().createRun().setText(footnoteText);
+      footnoteCounter++;
+
+      // Add the text after the footnote
+      if (text.length() > 0) {
+        XWPFRun textRun = para.createRun();
+        textRun.setText(text);
+      }
+    }
+    // If footnote goes at the end
+    else if (where >= text.length()) {
+      // Add the text first
+      XWPFRun textRun = para.createRun();
+      textRun.setText(text);
+
+      // Then add footnote reference
+      XWPFRun footnoteRun = para.createRun();
+      footnoteRun.setStyle("Footnote Reference");
+      CTFtnEdnRef ref = footnoteRun.getCTR().addNewFootnoteReference();
+      ref.setId(BigInteger.valueOf(footnoteCounter));
+
+      XWPFFootnote footnote = doc.createFootnote();
+      footnote.getCTFtnEdn().setId(BigInteger.valueOf(footnoteCounter));
+      footnote.createParagraph().createRun().setText(footnoteText);
+      footnoteCounter++;
+    }
+    // Footnote goes in the middle
+    else {
+      // Add text before the footnote
+      String beforeText = text.substring(0, where);
+      XWPFRun beforeRun = para.createRun();
+      beforeRun.setText(beforeText);
+
+      // Add footnote reference
+      XWPFRun footnoteRun = para.createRun();
+      footnoteRun.setStyle("Footnote Reference");
+      CTFtnEdnRef ref = footnoteRun.getCTR().addNewFootnoteReference();
+      ref.setId(BigInteger.valueOf(footnoteCounter));
+
+      XWPFFootnote footnote = doc.createFootnote();
+      footnote.getCTFtnEdn().setId(BigInteger.valueOf(footnoteCounter));
+      footnote.createParagraph().createRun().setText(footnoteText);
+      footnoteCounter++;
+
+      // Add text after the footnote
+      String afterText = text.substring(where);
+      XWPFRun afterRun = para.createRun();
+      afterRun.setText(afterText);
+    }
   }
 
   /** Bookmark spell */
@@ -101,6 +180,39 @@ public class WordDocxUtils {
     normalPara.setSpacingBefore(0);
     normalPara.setSpacingAfter(0);
     normalPara.createRun().setText(trailingText);
+  }
+
+  /** Create a single paragraph with Heading2 style where only the first part
+   * appears in the TOC, but the second part is visible in the document.
+   * This is achieved by creating two paragraphs where the first has a hidden
+   * paragraph marker (vanish and specVanish).
+   * @param doc The document
+   * @param headingText Text that will appear in TOC
+   * @param trailingText Additional text that won't appear in TOC
+   */
+  public static void addSplitHeading2Para(XWPFDocument doc,
+      String headingText,
+      String trailingText) {
+    // First paragraph with Heading2 style
+    XWPFParagraph headingPara = doc.createParagraph();
+    headingPara.setStyle("Heading2");
+
+    // Add the heading text
+    XWPFRun headingRun = headingPara.createRun();
+    headingRun.setText(headingText);
+
+    if ((trailingText == null) || trailingText.isEmpty()) { return; }
+
+    // Make the paragraph marker hidden (this is the style separator)
+    CTPPr pPr = headingPara.getCTP().isSetPPr() ? headingPara.getCTP().getPPr() : headingPara.getCTP().addNewPPr();
+    org.openxmlformats.schemas.wordprocessingml.x2006.main.CTParaRPr rPr = pPr.addNewRPr();
+    rPr.addNewVanish();
+    rPr.addNewSpecVanish();
+
+    // Second paragraph with the trailing text (no heading style)
+    XWPFParagraph trailingPara = doc.createParagraph();
+    XWPFRun trailingRun = trailingPara.createRun();
+    trailingRun.setText(" " + trailingText);
   }
 
   /**

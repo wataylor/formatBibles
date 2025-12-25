@@ -24,6 +24,7 @@ import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
 import org.apache.poi.xwpf.usermodel.ParagraphAlignment;
 import org.apache.poi.xwpf.usermodel.VerticalAlign;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFFooter;
 import org.apache.poi.xwpf.usermodel.XWPFHeader;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
@@ -42,6 +43,7 @@ import org.openxmlformats.schemas.wordprocessingml.x2006.main.STSectionMark;
 import asst.common.DescribeArgs;
 import asst.common.MainArgs;
 import asst.formatWord.utils.WordDocxUtils;
+import asst.hssf.SSU;
 import asst.hssf.WorkbookManager;
 
 /** Read input files and change words in them as specified by the
@@ -97,6 +99,10 @@ public class FormatWordMain {
   public static int footnoteCounter = 1;  // not thread safe
   /** Bookmarks must be created starting from 1 */
   public static int bookmarkCounter = 1;  // not thread safe
+  /** Record all the footnotes to be inserted */
+  public static Map<String, String> footnotes = new HashMap<String, String>();
+  /** Record the verses which go into the table of contents.*/
+  public static Map<String, String> tocVerses = new HashMap<String, String>();
 
   /** String that lists all verses that changed in format ddBBB c:v
    * like the book, chapter, and verse flags at the beginning of a
@@ -113,6 +119,7 @@ public class FormatWordMain {
   /** List all sheets that must be found in the Excel spreadsheet*/
   public static final String [] needed_sheets = {
       "WordChanges", "BookNames", "Footnotes",
+      "TOCVerses"
   };
 
   /**
@@ -192,6 +199,8 @@ public class FormatWordMain {
 	}
       }
       wm.makeFormatters();
+      loadFootnotes(wm);
+      loadTOCVerses(wm);
 
       Path inputDir = Paths.get(inputPath);
       if (!Files.isDirectory(inputDir)) {
@@ -287,8 +296,8 @@ public class FormatWordMain {
       XWPFParagraph paragraph = doc.createParagraph();
       paragraph.setStyle("Heading2");
       paragraph.createRun().setText("Verses changed by each archaic word replacement:");
-      
-      end1ColumnSection(doc);
+
+      end1ColumnSection(doc, "Updated verses");
       for (int i = 2; i < cref.size(); i++) {
 	String aCref = cref.get(i);
 	int ix = aCref.indexOf(":");
@@ -318,6 +327,35 @@ public class FormatWordMain {
       } catch (Exception e) {
 	System.out.println("ERR closing work book " + e.getMessage());
       }
+    }
+  }
+
+  /** Read the TOCVerses sheet and build a map of verse notes
+   * @param wm Workbook Manager
+   */
+  public static void loadTOCVerses(WorkbookManager wm) {
+    Sheet tocs = wm.pickSheet("TocVerses");
+    for (int i = 1; i<=tocs.getLastRowNum(); i++) {
+      Row row = tocs.getRow(i);
+      String chapVerse = SSU.getFormattedCell(0, row);
+      if ((chapVerse == null) || chapVerse.startsWith("#")) { continue; }
+      String value = SSU.getFormattedCell(1, row);
+      tocVerses.put(chapVerse, value);
+    }
+  }
+
+  /** Read the footnote values from the footnote sheet in the workbook
+   * @param wm the workbook
+   */
+  public static void loadFootnotes(WorkbookManager wm) {
+    Sheet feet = wm.pickSheet("Footnotes");
+    for (int i = 1; i<=feet.getLastRowNum(); i++) {
+      Row row = feet.getRow(i);
+      String chapVerse = SSU.getFormattedCell(0, row);
+      if ((chapVerse == null) || chapVerse.startsWith("#")) { continue; }
+      String value = SSU.getFormattedCell(1, row)
+	  + " " +SSU.getFormattedCell(2, row);
+      footnotes.put(chapVerse, value);
     }
   }
 
@@ -402,14 +440,15 @@ public class FormatWordMain {
 
     documentChapterStart(doc, chapTitle, chapComment);
 
-    end1ColumnSection(doc);
+    end1ColumnSection(doc, chapTitle);
   }
 
   /**The one-column chapter heading needs to be ended so that
    * the following 2-column section can appear.
    * @param doc The document
+   * @param chapTitle Chapter title to be used for the page headers
    */
-  public static void end1ColumnSection(XWPFDocument doc) {
+  public static void end1ColumnSection(XWPFDocument doc, String chapTitle) {
     // Create empty paragraph that will end the 1-column section and start 2-column section
     XWPFParagraph columnBreakPara = doc.createParagraph();
     CTP columnCtp = columnBreakPara.getCTP();
@@ -424,6 +463,75 @@ public class FormatWordMain {
 
     // Set page size and margins
     setPageSizeAndMargins(columnSectPr);
+
+    // Set page numbering format to Arabic numerals
+    CTPageNumber pgNum = columnSectPr.addNewPgNumType();
+    pgNum.setFmt(org.openxmlformats.schemas.wordprocessingml.x2006.main.STNumberFormat.DECIMAL);
+
+    // Create headers for this section with explicit references to prevent inheritance
+    XWPFHeaderFooterPolicy policy = new XWPFHeaderFooterPolicy(doc, columnSectPr);
+
+    // Even page header: chapter title
+    XWPFHeader evenHeader = policy.createHeader(XWPFHeaderFooterPolicy.EVEN);
+    XWPFParagraph evenPara = evenHeader.createParagraph();
+    evenPara.setStyle("Header");
+    XWPFRun evenRun = evenPara.createRun();
+    evenRun.setText(chapTitle);
+
+    // Odd page header: tab + chapter title except that these are centered
+    XWPFHeader oddHeader = policy.createHeader(XWPFHeaderFooterPolicy.DEFAULT);
+    XWPFParagraph oddPara = oddHeader.createParagraph();
+    oddPara.setStyle("Header");
+    //evenRun.addTab();
+    oddPara.createRun().setText(chapTitle);
+
+    // Create footer for odd pages
+    XWPFFooter oddFooter = policy.createFooter(XWPFHeaderFooterPolicy.DEFAULT);
+    XWPFParagraph oddFooterPara = oddFooter.createParagraph();
+    oddFooterPara.setStyle("Footer");
+    
+    // Left text
+    XWPFRun oddLeftRun = oddFooterPara.createRun();
+    oddLeftRun.setText("ye, you, your, yours: plural");
+    
+    // Tab to center
+    XWPFRun oddTabRun1 = oddFooterPara.createRun();
+    oddTabRun1.addTab();
+    
+    // Center: page number
+    oddFooterPara.getCTP().addNewFldSimple().setInstr("PAGE");
+    
+    // Tab to right
+    XWPFRun oddTabRun2 = oddFooterPara.createRun();
+    oddTabRun2.addTab();
+    
+    // Right text
+    XWPFRun oddRightRun = oddFooterPara.createRun();
+    oddRightRun.setText("thee, thou, thy, thine: singular");
+
+    // Create footer for even pages (same content)
+    XWPFFooter evenFooter = policy.createFooter(XWPFHeaderFooterPolicy.EVEN);
+    XWPFParagraph evenFooterPara = evenFooter.createParagraph();
+    evenFooterPara.setStyle("Footer");
+    
+    // Left text
+    XWPFRun evenLeftRun = evenFooterPara.createRun();
+    evenLeftRun.setText("ye, you, your, yours: plural");
+    
+    // Tab to center
+    XWPFRun evenTabRun1 = evenFooterPara.createRun();
+    evenTabRun1.addTab();
+    
+    // Center: page number
+    evenFooterPara.getCTP().addNewFldSimple().setInstr("PAGE");
+    
+    // Tab to right
+    XWPFRun evenTabRun2 = evenFooterPara.createRun();
+    evenTabRun2.addTab();
+    
+    // Right text
+    XWPFRun evenRightRun = evenFooterPara.createRun();
+    evenRightRun.setText("thee, thou, thy, thine: singular");
   }
 
   /** Create a 1-column chapter start with a H1 paragraph and an
@@ -433,21 +541,6 @@ public class FormatWordMain {
    * @param chapComment Optional chapter introduction
    */
   public static void documentChapterStart(XWPFDocument doc, String chapTitle, String chapComment) {
-    // Create headers for this section
-    XWPFHeaderFooterPolicy policy = doc.createHeaderFooterPolicy();
-
-    // Even page header: tab + chapter title
-    XWPFHeader evenHeader = policy.createHeader(XWPFHeaderFooterPolicy.EVEN);
-    XWPFParagraph evenPara = evenHeader.createParagraph();
-    XWPFRun evenRun = evenPara.createRun();
-    evenRun.addTab();
-    evenRun.setText(chapTitle);
-
-    // Odd page header: chapter title
-    XWPFHeader oddHeader = policy.createHeader(XWPFHeaderFooterPolicy.DEFAULT);
-    XWPFParagraph oddPara = oddHeader.createParagraph();
-    oddPara.createRun().setText(chapTitle);
-
     // Add chapter title as centered Heading1 paragraph
     XWPFParagraph titlePara = doc.createParagraph();
     titlePara.setStyle("Heading1");
@@ -501,7 +594,8 @@ public class FormatWordMain {
     }
     int spaceIndex = line.indexOf("  ");
     if (spaceIndex == -1) { return null; }
-    String bookmark = bkno + line.substring(0, spaceIndex);
+    String chapVerse = line.substring(0, spaceIndex);
+    String bookmark = bkno + chapVerse;
     if (verseChangeList.indexOf(bookmark + "_") < 0) {
       bookmark = null;
     }
@@ -522,6 +616,33 @@ public class FormatWordMain {
 
     String verseNum = remaining.substring(0, spaceIndex);
     String verseText = remaining.substring(spaceIndex + 2); // Skip the spaces after verse number
+
+    String footnoteData = footnotes.get(chapVerse);
+    String footnoteWord = null;
+    String footnoteText = null;
+    int footnoteWhere = 0;
+    if (footnoteData != null) {
+      int ix = footnoteData.indexOf (" ");
+      footnoteWord = footnoteData.substring(0, ix);
+      footnoteText = footnoteData.substring(ix+1);
+      ix = verseText.indexOf(footnoteWord);
+      if (ix < 0) {
+	footnoteData = null;
+      } else {
+	footnoteWhere = ix + footnoteWord.length();
+      }
+    }
+
+    /* The toc note comes before the actual verse  */
+    String tocNote = tocVerses.get(chapVerse);
+    if (tocNote != null) {
+      int ix = tocNote.indexOf("_");
+      if (ix < 0) {
+	WordDocxUtils.addSplitHeading2Para(doc, tocNote, "");
+      } else {
+	WordDocxUtils.addSplitHeading2Para(doc, " " + tocNote.substring(0, ix), tocNote.substring(ix+1));
+      }
+    }
 
     // If verse 1, add chapter heading and verse with drop cap
     if ("1".equals(verseNum)) {
@@ -549,8 +670,13 @@ public class FormatWordMain {
 	verseNumRun.setSubscript(VerticalAlign.SUPERSCRIPT);
 
 	// Add verse text
-	XWPFRun textRun = versePara.createRun();
-	textRun.setText(verseText);
+	if (footnoteData != null) {
+	  WordDocxUtils.addFootnote(versePara, doc, verseText,
+	      footnoteWhere, footnoteText);
+	} else {
+	  XWPFRun textRun = versePara.createRun();
+	  textRun.setText(verseText);
+	}
 	if (bookmark != null) {
 	  setBookmark(versePara, bookmark);
 	}
@@ -567,8 +693,13 @@ public class FormatWordMain {
 	verseNumRun.setSubscript(VerticalAlign.SUPERSCRIPT);
 
 	// Add verse text
-	XWPFRun textRun = versePara.createRun();
-	textRun.setText(verseText);
+	if (footnoteData != null) {
+	  WordDocxUtils.addFootnote(versePara, doc, verseText,
+	      footnoteWhere, footnoteText);
+	} else {
+	  XWPFRun textRun = versePara.createRun();
+	  textRun.setText(verseText);
+	}
 	if (bookmark != null) {
 	  setBookmark(versePara, bookmark);
 	}
