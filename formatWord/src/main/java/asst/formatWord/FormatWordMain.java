@@ -633,17 +633,6 @@ public class FormatWordMain {
       }
     }
 
-    /* The toc note comes before the actual verse  */
-    String tocNote = tocVerses.get(chapVerse);
-    if (tocNote != null) {
-      int ix = tocNote.indexOf("_");
-      if (ix < 0) {
-	WordDocxUtils.addSplitHeading2Para(doc, tocNote, "");
-      } else {
-	WordDocxUtils.addSplitHeading2Para(doc, " " + tocNote.substring(0, ix), tocNote.substring(ix+1));
-      }
-    }
-
     // If verse 1, add chapter heading and verse with drop cap
     if ("1".equals(verseNum)) {
       // Add chapter heading
@@ -657,6 +646,17 @@ public class FormatWordMain {
       XWPFRun run = chapterPara.createRun();
       run.setBold(true);
       run.setText("Chapter " + chapterNum);
+
+      /* The toc note and link come before the actual verse  */
+      String tocNote = tocVerses.get(chapVerse);
+      if (tocNote != null) {
+        int ix = tocNote.indexOf("_");
+        if (ix < 0) {
+  	WordDocxUtils.addSplitHeading2Para(doc, tocNote, "");
+        } else {
+  	WordDocxUtils.addSplitHeading2Para(doc, " " + tocNote.substring(0, ix), tocNote.substring(ix+1));
+        }
+      }
 
       // Add verse with superscript verse number  // TODO drop cap
       // If bookmark is not null, it is a bookmark that must be set.

@@ -44,13 +44,15 @@ public class WordDocxUtils {
   /** Footnote spells */
   public static void addFootnote(XWPFParagraph para, XWPFDocument doc, String footnoteText) {
     XWPFRun run = para.createRun();
-    run.setStyle("Footnote Reference");
+    run.setStyle("FootnoteReference");
     CTFtnEdnRef ref = run.getCTR().addNewFootnoteReference();
     ref.setId(BigInteger.valueOf(footnoteCounter));
 
     XWPFFootnote footnote = doc.createFootnote();
     footnote.getCTFtnEdn().setId(BigInteger.valueOf(footnoteCounter));
-    footnote.createParagraph().createRun().setText(footnoteText);
+    XWPFParagraph footnotePara = footnote.createParagraph();
+    footnotePara.setStyle("FootnoteText");
+    footnotePara.createRun().setText(footnoteText);
 
     footnoteCounter++;
   }
@@ -76,13 +78,15 @@ public class WordDocxUtils {
     if (where == 0) {
       // Create run with footnote reference
       XWPFRun footnoteRun = para.createRun();
-      footnoteRun.setStyle("Footnote Reference");
+      footnoteRun.setStyle("FootnoteReference");
       CTFtnEdnRef ref = footnoteRun.getCTR().addNewFootnoteReference();
       ref.setId(BigInteger.valueOf(footnoteCounter));
 
       XWPFFootnote footnote = doc.createFootnote();
       footnote.getCTFtnEdn().setId(BigInteger.valueOf(footnoteCounter));
-      footnote.createParagraph().createRun().setText(footnoteText);
+      XWPFParagraph footnotePara = footnote.createParagraph();
+      footnotePara.setStyle("FootnoteText");
+      footnotePara.createRun().setText(footnoteText);
       footnoteCounter++;
 
       // Add the text after the footnote
@@ -99,13 +103,15 @@ public class WordDocxUtils {
 
       // Then add footnote reference
       XWPFRun footnoteRun = para.createRun();
-      footnoteRun.setStyle("Footnote Reference");
+      footnoteRun.setStyle("FootnoteReference");
       CTFtnEdnRef ref = footnoteRun.getCTR().addNewFootnoteReference();
       ref.setId(BigInteger.valueOf(footnoteCounter));
 
       XWPFFootnote footnote = doc.createFootnote();
       footnote.getCTFtnEdn().setId(BigInteger.valueOf(footnoteCounter));
-      footnote.createParagraph().createRun().setText(footnoteText);
+      XWPFParagraph footnotePara = footnote.createParagraph();
+      footnotePara.setStyle("FootnoteText");
+      footnotePara.createRun().setText(footnoteText);
       footnoteCounter++;
     }
     // Footnote goes in the middle
@@ -117,13 +123,15 @@ public class WordDocxUtils {
 
       // Add footnote reference
       XWPFRun footnoteRun = para.createRun();
-      footnoteRun.setStyle("Footnote Reference");
+      footnoteRun.setStyle("FootnoteReference");
       CTFtnEdnRef ref = footnoteRun.getCTR().addNewFootnoteReference();
       ref.setId(BigInteger.valueOf(footnoteCounter));
 
       XWPFFootnote footnote = doc.createFootnote();
       footnote.getCTFtnEdn().setId(BigInteger.valueOf(footnoteCounter));
-      footnote.createParagraph().createRun().setText(footnoteText);
+      XWPFParagraph footnotePara = footnote.createParagraph();
+      footnotePara.setStyle("FootnoteText");
+      footnotePara.createRun().setText(footnoteText);
       footnoteCounter++;
 
       // Add text after the footnote
