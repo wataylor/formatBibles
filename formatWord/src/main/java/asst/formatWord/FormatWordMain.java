@@ -311,13 +311,14 @@ public class FormatWordMain {
       // WordDocxUtils.setUpdateFieldsOnOpen(doc);
 
       // Write and close the document
-      try (FileOutputStream out = new FileOutputStream(new File(outputPlace.toFile(), "Injected.docx"))) {
+      String newDocName = "GentleKJNewTestament.docx";
+      try (FileOutputStream out = new FileOutputStream(new File(outputPlace.toFile(), newDocName))) {
 	doc.write(out);
       }
       doc.close();
 
       // explanationWriter.close();
-      System.out.println("Finished processing.");
+      System.out.println("Wrote " + newDocName);
     } catch (Exception e) {
       System.out.println("ERROR " + e.getMessage());
       System.exit(1);
