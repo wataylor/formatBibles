@@ -133,7 +133,7 @@ public class FormatWordMain {
    */
   public static void main(String[] args) {
     MainArgs carg = new MainArgs(DEFAULT_ARGS);
-    carg.parseArgs(args); // updates or overrides the defalut values
+    carg.parseArgs(args); // updates or overrides the default values
 
     if (carg.getBoolean("help")) {
       StringBuilder sb =
