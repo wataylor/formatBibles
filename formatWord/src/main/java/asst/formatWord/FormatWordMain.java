@@ -46,12 +46,15 @@ import asst.formatWord.utils.WordDocxUtils;
 import asst.hssf.SSU;
 import asst.hssf.WorkbookManager;
 
-/** Read input files and change words in them as specified by the
- * input dictionary.
+/** Read input files and generate a Word document with Book Headings, footnotes, and
+ * TOC entries as specified by the input spreadsheet.
  * @author Material Gain
  * @since 2025 12
  */
 public class FormatWordMain {
+  /** Control printing*/
+  public static boolean verbose = true;
+
   /** Describe the purpose of the command line args for the Help function.  */
   public static Map<String, String> argDescs = new HashMap<String, String>();
 
@@ -65,6 +68,9 @@ public class FormatWordMain {
   private static final BigInteger MARGIN_RIGHT = BigInteger.valueOf(720);  // 0.5 inch
   private static final BigInteger MARGIN_HEADER = BigInteger.valueOf(720);  // 0.5 inch
   private static final BigInteger MARGIN_FOOTER = BigInteger.valueOf(720);  // 0.5 inch
+
+  /** The name of the file that will be generated */
+  public static final String newDocName = "GentleKJNewTestament.docx";
 
   static {
     argDescs.put("help", "If \"+help\" is specified, nothing else is run.");
@@ -105,7 +111,7 @@ public class FormatWordMain {
   public static Map<String, String> tocVerses = new HashMap<String, String>();
 
   /** String that lists all verses that changed in format ddBBB c:v
-   * like the book, chapter, and verse flags at the beginning of a
+   * like the book#, book, chapter, and verse at the beginning of a
    * verse in the electronic bible. */
   public static String verseChangeList = null;
 
@@ -127,7 +133,7 @@ public class FormatWordMain {
    */
   public static void main(String[] args) {
     MainArgs carg = new MainArgs(DEFAULT_ARGS);
-    carg.parseArgs(args);
+    carg.parseArgs(args); // updates or overrides the defalut values
 
     if (carg.getBoolean("help")) {
       StringBuilder sb =
@@ -172,7 +178,7 @@ public class FormatWordMain {
     }
 
     // Test that we can write the output file
-    File outputFile = new File(outputDir, "Injected.docx");
+    File outputFile = new File(outputDir, newDocName);
     if (outputFile.exists() && !outputFile.canWrite()) {
       System.err.println("Output file exists but cannot be written: " + outputFile.getAbsolutePath());
       System.exit(1);
@@ -311,7 +317,6 @@ public class FormatWordMain {
       // WordDocxUtils.setUpdateFieldsOnOpen(doc);
 
       // Write and close the document
-      String newDocName = "GentleKJNewTestament.docx";
       try (FileOutputStream out = new FileOutputStream(new File(outputPlace.toFile(), newDocName))) {
 	doc.write(out);
       }
@@ -342,6 +347,9 @@ public class FormatWordMain {
       if ((chapVerse == null) || chapVerse.startsWith("#")) { continue; }
       String value = SSU.getFormattedCell(1, row);
       tocVerses.put(chapVerse, value);
+      if (verbose) {
+	System.out.println("Toc " + chapVerse + " " + value);
+      }
     }
   }
 
@@ -649,15 +657,7 @@ public class FormatWordMain {
       run.setText("Chapter " + chapterNum);
 
       /* The toc note and link come before the actual verse  */
-      String tocNote = tocVerses.get(chapVerse);
-      if (tocNote != null) {
-        int ix = tocNote.indexOf("_");
-        if (ix < 0) {
-  	WordDocxUtils.addSplitHeading2Para(doc, tocNote, "");
-        } else {
-  	WordDocxUtils.addSplitHeading2Para(doc, " " + tocNote.substring(0, ix), tocNote.substring(ix+1));
-        }
-      }
+      processTOCVerse(doc, chapVerse);
 
       // Add verse with superscript verse number  // TODO drop cap
       // If bookmark is not null, it is a bookmark that must be set.
@@ -683,6 +683,9 @@ public class FormatWordMain {
 	}
       }
     } else {
+      /* The toc note and link come before the actual verse  */
+      processTOCVerse(doc, chapVerse);
+
       // Add verse with superscript verse number
       if (verseText.length() > 0) {
 	XWPFParagraph versePara = doc.createParagraph();
@@ -709,7 +712,31 @@ public class FormatWordMain {
     return null;
   }
 
-  private static void setBookmark(XWPFParagraph para, String bookmarkName) {
+  /** Check to see if this verse should be preceded by a note which
+   * goes into the Table of Contents.  The TOC entry ends at the _
+   * if there is one, but the entire paragraph goes before the verse.  
+   * @param doc The document
+   * @param chapVerse The current chapter and verse
+   */
+  public static void processTOCVerse(XWPFDocument doc, String chapVerse) {
+    String tocNote = tocVerses.get(chapVerse);
+    if (tocNote != null) {
+      int ix = tocNote.indexOf("_");
+      if (ix < 0) {
+    WordDocxUtils.addSplitHeading2Para(doc, tocNote, "");
+      } else {
+    WordDocxUtils.addSplitHeading2Para(doc, " " + tocNote.substring(0, ix), tocNote.substring(ix+1));
+      }
+    }
+  }
+
+  /** Set the book number, book name, chapter, and verse as a bookmark
+   * in the document.  These bookmarks tell Word where to put the
+   * cursor when checking to see how a replaced word looks.
+   * @param para The current paragraph
+   * @param bookmarkName Name of the bookmark
+   */
+  public static void setBookmark(XWPFParagraph para, String bookmarkName) {
     CTBookmark bookmarkStart = para.getCTP().addNewBookmarkStart();
     bookmarkStart.setId(BigInteger.valueOf(bookmarkCounter));
     bookmarkStart.setName(bookmarkName);
