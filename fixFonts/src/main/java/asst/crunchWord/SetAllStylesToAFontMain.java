@@ -61,14 +61,26 @@ import org.apache.xmlbeans.XmlOptions;
 public class SetAllStylesToAFontMain {
 
   /** The font to use for all text in the document */
-  public static String fontToEmbed = "Times New Roman";
+  public static String fontToEmbed = "Calibri";
 
   /**
    * @param args will be a .docx file eventually.
    * @throws Exception
    */
   public static void main(String[] args) throws Exception {
-    String inputPath = "/Users/Bill Taylor/Documents/WhyWeUseTheKJB.docx";
+    String inputPath;
+
+    if (args.length < 2) {
+      System.out.println("This program requires two command-line arguments:\n"
+	  + "The name of the desired font\n"
+	  + "The path to the .docx file to have all fonts set.\n"
+	  + "Be sure to enclose the font or path in double quotes if they have spaces.\n"
+	  + "\nWARNING:  NO error checking.  If you select an unknown font, the .docx may become unreadable.");
+      System.exit(1);
+    }
+
+    fontToEmbed = args[0];
+    inputPath = args[1];
 
     System.out.println("Setting all fonts to: " + fontToEmbed);
     System.out.println("Processing: " + inputPath);
