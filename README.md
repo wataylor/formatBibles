@@ -6,7 +6,15 @@ The King James has had more than 24,000 changes in spelling and printing since 1
 
 Such updates were needed as English spelling and fonts changed over time and do not change the Word of God.  This project carries on such changes in a way that fulfills Paul's charges to Timothy which gave local churches responsibility for preserving and spreading the Very Words of God.
 
-# The Two Jars in the Repo
+The first program reads an Excel spreadsheet listing archaic words and more modern substitutions.  It then reads through an electronic version of the 1769 King James looking for archaic words.  The modern equivalent is inserted and the archaic word is surrounded by [] to help readers learn them over time.
+
+The second program formats the raw text into a print-ready .docx file which can be edited as desired.
+
+# Building All System Components
+
+The top-level **pom.xml** should build all system components including the Important Jars and the Support Jars.  
+
+# The Important Jars in the Repo
 
 This repo generates two executable .jar files: **gentlerKJB** and **formatWord**.  They're run with **java -jar <filename> <command args>**. I can never remeber all the arguments, so each executable has a **+help** argument which documents the default argument values and exits.
 
@@ -33,6 +41,14 @@ The words being changed are listed in the Excel file **KJVWordUpdates.xlsx**. **
 The spreadsheet also defines footnotes for specific words in specific verses on the **Footnotes** sheet and a list of verse comments which are added to the Table of Contents in the **TOCVerses** sheet.  These sheets are explained in more detail in **The Gentle King James Project** description in the folder.
 
 The program adds a list of all verses that were changed with hyperlinks to the changed verses. That list is followed by a list for each archaic word with hyperlinks to the verses it changed. This should help verify all the changes.
+
+# The Support Jars
+
+**commonClasses** builds a .jar file containing command utilities for parsing command-line arguments and for reading Excel spreadsheets.
+
+**fixFonts** generates an executable .jar file which sets all fonts in a .docx file to a specified value.  This is useful because Microsoft Word tends to hide font names in various places which are explored by this program.  A hidden font may not be embeddable.  If you want to produce a .pdf file containing only embeddable fonts, choosing an embeddable font for all uses in the document is a good first step.
+
+If you save a .docx as a .pdf, Word sometimes includes Ariel for reasons known only to Microsoft.  In that case, using the Microsoft "Print as PDF" printer seems to include only embeddable fonts.  If that doesn't work for you, try another .docx to .pdf converter.
 
 # ✨ I'm A Geek
 
