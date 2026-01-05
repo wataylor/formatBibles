@@ -216,6 +216,11 @@ public class GentlerKBJMain {
 	  WordUpgradeUtils.modernizeWord(pi);
 	}
       } else {
+	if ((verb != null) && verb.startsWith("Not in")) {
+	  if (verb.indexOf(pi.bookChapVerse) > 0) {
+	    return pi.getEditedLine();
+	  }
+	}
 	WordUpgradeUtils.modernizeWord(pi);
       }
     }
