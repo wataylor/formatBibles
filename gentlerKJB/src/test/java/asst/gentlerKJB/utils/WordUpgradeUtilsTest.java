@@ -12,15 +12,15 @@ class WordUpgradeUtilsTest {
   public static final String aLine = "word1 word2 word5a [word5] word3";
   public static final String g11 = "GEN 1:1  In the beginning God created the heaven and the earth.";
   public static final String mat12 = "MAT 1:2  Abraham Begat Isaac; and Isaac begat Jacob; and Jacob begat Judas and his brethren;";
-  public static final String mat12New = "MAT 1:2  Abraham Fathered [Begat] Isaac; and Isaac begat Jacob; and Jacob begat Judas and his brethren;";
+  public static final String mat12New = "MAT 1:2  Abraham [Begat] {Fathered} Isaac; and Isaac begat Jacob; and Jacob begat Judas and his brethren;";
   public static final String jon1621 = "JOH 16:21  A woman when she is in travail hath sorrow, because her hour is come: but as soon as she is delivered of the child, she remembereth no more the anguish, for joy that a man is born into the world.";
-  public static final String jon1621new = "JOH 16:21  A woman when she is giving birth [in travail] hath sorrow, because her hour is come: but as soon as she is delivered of the child, she remembereth no more the anguish, for joy that a man is born into the world.";
-  public static final String jon1621newer = "JOH 16:21  A woman when she is giving birth [in travail] is sad [hath sorrow], because her hour is come: but as soon as she is delivered of the child, she remembereth no more the anguish, for joy that a man is born into the world.";
-  public static final String jon1621newest = "JOH 16:21  A woman when she is giving birth [in travail] is sad [hath sorrow], because her hour is come: but as soon as she is delivered of the child, she remembereth no more the pain [anguish], for joy that a man is born into the world.";
+  public static final String jon1621new = "JOH 16:21  A woman when she is [in travail] {giving birth} hath sorrow, because her hour is come: but as soon as she is delivered of the child, she remembereth no more the anguish, for joy that a man is born into the world.";
+  public static final String jon1621newer = "JOH 16:21  A woman when she is [in travail] {giving birth} [hath sorrow] {is sad}, because her hour is come: but as soon as she is delivered of the child, she remembereth no more the anguish, for joy that a man is born into the world.";
+  public static final String jon1621newest = "JOH 16:21  A woman when she is [in travail] {giving birth} [hath sorrow] {is sad}, because her hour is come: but as soon as she is delivered of the child, she remembereth no more the [anguish] {pain}, for joy that a man is born into the world.";
   public static final String honorable = "Hez 2:22  honour to whom Honour to whom honour";
   public static final String honorablenew = "Hez 2:22  honor to whom Honor to whom honor";
   public static final String smiteMaybe = "JOH 16:22  smite mite now";
-  public static final String smitten = "JOH 16:22  smite tiny amount [mite] now";
+  public static final String smitten = "JOH 16:22  smite [mite] {tiny amount} now";
   public static final String smiteCheek= "MAT 5:39  But I say unto you, That ye resist not evil: but whosoever shall smite thee on thy right cheek, turn to him the other also.";
   public static PassingItems pi;
 

@@ -69,8 +69,12 @@ public class WordUpgradeUtils {
 	/* Capitalize the word as the input word was capitalized*/
 	text = text.substring(0, 1).toUpperCase() + text.substring(1);
       }
-      pi.line = pi.line.substring(0, ix) + text + " ["
-	  + pi.line.substring(ix, ix + pi.oldWord.length()) + "]"
+      /* The original words are wrapped in [] to protect them from
+       * later matching.  The new words are enclosed in {} to distinguish
+       * them from the original text. */
+      pi.line = pi.line.substring(0, ix) +"["
+	  + pi.line.substring(ix, ix + pi.oldWord.length()) + "] "
+	  + "{" + text + "}"
 	  + pi.line.substring(ix + pi.oldWord.length());
       pi.lineLowerCase = pi.line.toLowerCase();
       recordCref(pi);
