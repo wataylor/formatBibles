@@ -198,6 +198,7 @@ public class GentlerKBJMain {
    * @return modified line of text
    */
   public static String upgradeLine(String bkno, String line, WorkbookManager wm) {
+    /* This computes bookChapVerse from the line.  */
     PassingItems pi = new PassingItems(line, "w", "w");
     pi.bkno = bkno;
     for (int i = wm.sheet.getFirstRowNum(); i <= wm.sheet.getLastRowNum(); i++) {
@@ -208,6 +209,10 @@ public class GentlerKBJMain {
       String verb = SSU.getFormattedCell(2, row);
       if ((newWord == null) || (newWord.length() <= 0)) { break; }
       pi.setWords(oldWord, newWord);
+      /* Used for extreme debugging
+       * if ("MAT 9:4".equals(pi.bookChapVerse) && "wherefore".equals(pi.oldWord)) {
+       * System.out.println("Wherefore"); }
+       */
       if ((verb != null) && ("Not mark".equals(verb))) {
 	WordUpgradeUtils.replaceWord(pi);
       } else if ((verb != null) && verb.startsWith("Only in")) {
@@ -218,7 +223,7 @@ public class GentlerKBJMain {
       } else {
 	if ((verb != null) && verb.startsWith("Not in")) {
 	  if (verb.indexOf(pi.bookChapVerse) > 0) {
-	    return pi.getEditedLine();
+	    continue;  /* Skip this row of the spreadsheet */
 	  }
 	}
 	WordUpgradeUtils.modernizeWord(pi);

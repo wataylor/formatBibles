@@ -296,14 +296,14 @@ public class FormatWordMain {
       long spaces = verseChangeList.chars()
 	  .filter(ch -> ch == ' ')
 	  .count();
-      documentChapterStart(doc, "Lists of Word Changes",
-	  "" + spaces + " verses that were changed:");
+      documentChapterStart(doc, "Lists of Word Helps",
+	  "" + spaces + " verses that were touched:");
       addParagraphOfChangeLinks(doc, "", verseChangeList);
       XWPFParagraph paragraph = doc.createParagraph();
       paragraph.setStyle("Heading2");
-      paragraph.createRun().setText("Verses changed by each archaic word replacement:");
+      paragraph.createRun().setText("Verses touched by each old-fashioned word:");
 
-      end1ColumnSection(doc, "Updated verses");
+      end1ColumnSection(doc, "Affected Verses");
       for (int i = 2; i < cref.size(); i++) {
 	String aCref = cref.get(i);
 	int ix = aCref.indexOf(":");
