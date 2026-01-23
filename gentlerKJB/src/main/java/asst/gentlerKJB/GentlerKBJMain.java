@@ -207,18 +207,23 @@ public class GentlerKBJMain {
       if ((oldWord == null) || oldWord.startsWith("#")) { continue; }
       String newWord = SSU.getFormattedCell(1, row);
       String verb = SSU.getFormattedCell(2, row);
-      if ((newWord == null) || (newWord.length() <= 0)) { break; }
+      if ((newWord == null) || (newWord.length() <= 0)) { continue; }
       pi.setWords(oldWord, newWord);
-      /* Used for extreme debugging
+      /* Used for extreme debugging - can also use row number if known
        * if ("MAT 9:4".equals(pi.bookChapVerse) && "wherefore".equals(pi.oldWord)) {
        * System.out.println("Wherefore"); }
        */
       if ((verb != null) && ("Not mark".equals(verb))) {
 	WordUpgradeUtils.replaceWord(pi);
       } else if ((verb != null) && verb.startsWith("Only in")) {
-	/* Modernize the word only in specified verses */
-	if (verb.indexOf(pi.bookChapVerse) > 0) {
-	  WordUpgradeUtils.modernizeWord(pi);
+	/* Modernize the word only in specified verses which must be separated
+	 * by a space.  Need a space at the end to get the last one. */
+	if ((verb + " ").indexOf(pi.bookChapVerse + " ") > 0) {
+	  if (!WordUpgradeUtils.modernizeWord(pi)) {
+	    System.err.println("Row " + i + " not find " + pi.oldWord
+		+ " in " + pi.bookChapVerse
+		+ " " + pi.lineLowerCase);
+	  }
 	}
       } else {
 	if ((verb != null) && verb.startsWith("Not in")) {
