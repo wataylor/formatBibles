@@ -61,7 +61,7 @@ public class WordUpgradeUtils {
    * @param pi 
    * @return true if the line changed because of this word.
    */
-  public static void modernizeWord(PassingItems pi) {
+  public static boolean modernizeWord(PassingItems pi) {
     int ix = findWordIndex(pi.lineLowerCase, pi.oldWord);
     if (ix >= 0) {
       String text = pi.newWord;
@@ -78,7 +78,9 @@ public class WordUpgradeUtils {
 	  + pi.line.substring(ix + pi.oldWord.length());
       pi.lineLowerCase = pi.line.toLowerCase();
       recordCref(pi);
+      return true;
     }
+    return false;
   }
 
   /** replace oldWord with newWord but do not retain oldWord in []
