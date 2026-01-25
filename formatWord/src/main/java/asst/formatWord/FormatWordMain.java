@@ -58,19 +58,19 @@ public class FormatWordMain {
   /** Describe the purpose of the command line args for the Help function.  */
   public static Map<String, String> argDescs = new HashMap<String, String>();
 
-  // Page size and margin constants (in twentieths of a point)
-  // 6 x 9 inches
-  private static final BigInteger PAGE_WIDTH = BigInteger.valueOf(8640);   // 6 inches (8.5" = 12240)
-  private static final BigInteger PAGE_HEIGHT = BigInteger.valueOf(12960); // 9 inches (11" = 15840)
+  /* Page size and margin constants twips (one twentieth of a point).
+   * 1 inch = 1440 twips.
+   * These values give 6 x 9 inches */
+  private static BigInteger PAGE_WIDTH = BigInteger.valueOf(8640);   // 6 inches (8.5" = 12240)
+  private static BigInteger PAGE_HEIGHT = BigInteger.valueOf(12960); // 9 inches (11" = 15840)
+  private static BigInteger GUTTER = BigInteger.valueOf(288);  // 360 is 0.25 inch gutter, 0.2 inch = 288 twips
+  private static boolean WANT_LINE_BETWEEN = true;
   private static final BigInteger MARGIN_TOP = BigInteger.valueOf(720);    // 0.5 inch
   private static final BigInteger MARGIN_BOTTOM = BigInteger.valueOf(720); // 0.5 inch
   private static final BigInteger MARGIN_LEFT = BigInteger.valueOf(720);   // 0.5 inch
   private static final BigInteger MARGIN_RIGHT = BigInteger.valueOf(720);  // 0.5 inch
   private static final BigInteger MARGIN_HEADER = BigInteger.valueOf(720);  // 0.5 inch
   private static final BigInteger MARGIN_FOOTER = BigInteger.valueOf(720);  // 0.5 inch
-
-  /** The name of the file that will be generated */
-  public static final String newDocName = "GentleKJNewTestament.docx";
 
   static {
     argDescs.put("help", "If \"+help\" is specified, nothing else is run.");
@@ -87,6 +87,8 @@ public class FormatWordMain {
     argDescs.put("count", "Tells how many input files to process.");
     argDescs.put("templateFile", "Path to a .docx template file with predefined styles."
 	+ " The generated paragraphs are put at the end of this file.");
+    argDescs.put("newDocName", "Name of the output file to be written."
+	+ " It shoud end with .docx but it does not have to.");
   }
   /** +help is the default value so that the program explains
    * the parameters if it is called with no arguments. */
@@ -96,8 +98,9 @@ public class FormatWordMain {
       "outputPath=/temp/KJB/",
       "dictionary=/Sync/Biblical/KJV/Gentle/KJBWordUpdates.xlsx",
       "templateFile=/Sync/Biblical/KJV/Gentle/GentleKJBNT.docx",
+      "newDocName=GentleKJNewTestament.docx",
       "firstFile=40MAT.TXT",
-      "count=50",
+      "count=67",
       "+help",
   };
 
@@ -149,6 +152,7 @@ public class FormatWordMain {
     String dictionaryFile = (String)carg.get("dictionary");
     String templateFile = (String)carg.get("templateFile");
     String firstFile = (String)carg.get("firstFile");
+    String newDocName = (String)carg.get("newDocName");
     int count = carg.getInt("count");
 
 
@@ -430,7 +434,12 @@ public class FormatWordMain {
     // Define the 2-column layout for the section that just ended
     CTColumns columns = sectPr.addNewCols();
     columns.setNum(BigInteger.valueOf(2));
-    columns.setSpace(BigInteger.valueOf(360)); // 0.25 inch gutter
+    columns.setSpace(GUTTER);
+
+    // Add line between columns if WANT_LINE_BETWEEN is true
+    if (WANT_LINE_BETWEEN) {
+      columns.setSep(true);
+    }
 
     // Set page size and margins
     setPageSizeAndMargins(sectPr);
@@ -581,7 +590,14 @@ public class FormatWordMain {
     Sheet sheet = wm.wb.getSheet("BookNames");
     Row row = sheet.getRow(chapNum);
     String bookName = row.getCell(1).getStringCellValue();
-    String chapterTitle = row.getCell(2).getStringCellValue();
+    String chapterTitle;
+    try {
+      chapterTitle = row.getCell(2).getStringCellValue();
+    } catch (Exception e) {
+      chapterTitle = "No title for this chapter in the dictionary file.";
+      System.err.println("The dictionary file has no title for "
+	  + bookName + " chapter number " + chapNum);
+    }
     return chapterTitle.replace("_", bookName);
   }
 

@@ -53,7 +53,7 @@ public class GentlerKBJMain {
       "outputPath=/temp/KJB/",
       "dictionary=/Sync/Biblical/KJV/Gentle/KJBWordUpdates.xlsx",
       "firstFile=40MAT.TXT",
-      "count=40",
+      "count=70",
       "+help",
   };
  
