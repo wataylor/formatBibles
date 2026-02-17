@@ -73,7 +73,8 @@ public class FormatWordMain {
   private static final BigInteger MARGIN_FOOTER = BigInteger.valueOf(720);  // 0.5 inch
 
   static {
-    argDescs.put("help", "If \"+help\" is specified, nothing else is run.");
+    argDescs.put("help", "If \"+help\" is specified, nothing else is run."
+        + " Enter -help to turn help off to run the program.");
     argDescs.put("doIt", "\"+doIt\" must be set to take any action."
 	+ "  If it is not set, no action is taken and information about"
 	+ " actions that would be taken is printed instead.");
@@ -88,7 +89,7 @@ public class FormatWordMain {
     argDescs.put("templateFile", "Path to a .docx template file with predefined styles."
 	+ " The generated paragraphs are put at the end of this file.");
     argDescs.put("newDocName", "Name of the output file to be written."
-	+ " It shoud end with .docx but it does not have to.");
+	+ " It should end with .docx but it does not have to.");
   }
   /** +help is the default value so that the program explains
    * the parameters if it is called with no arguments. */
@@ -97,7 +98,7 @@ public class FormatWordMain {
       "inputPath=/temp/KJB/",
       "outputPath=/temp/KJB/",
       "dictionary=/Sync/Biblical/KJV/Gentle/KJBWordUpdates.xlsx",
-      "templateFile=/Sync/Biblical/KJV/Gentle/GentleKJBNT.docx",
+      "templateFile=/Sync/Biblical/KJV/Gentle/GentleKJB6x9.docx",
       "newDocName=GentleKJNewTestament.docx",
       "firstFile=40MAT.TXT",
       "count=67",
@@ -330,6 +331,7 @@ public class FormatWordMain {
       System.out.println("Wrote " + newDocName);
     } catch (Exception e) {
       System.out.println("ERROR " + e.getMessage());
+      e.printStackTrace();
       System.exit(1);
     } finally {
       try {
