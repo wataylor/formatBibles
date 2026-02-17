@@ -1,7 +1,6 @@
 package asst.gentlerKJB;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -32,7 +31,8 @@ public class GentlerKBJMain {
   /** Describe the purpose of the command line args for the Help function.  */
   public static Map<String, String> argDescs = new HashMap<String, String>();
   static {
-    argDescs.put("help", "If \"+help\" is specified, nothing else is run.");
+    argDescs.put("help", "If \"+help\" is specified, nothing else is run."
+	+ " Enter -help to cancel the help request and run the program.");
     argDescs.put("doIt", "\"+doIt\" must be set to take any action."
 	+ "  If it is not set, no action is taken and information about"
 	+ " actions that would be taken is printed instead.");
@@ -108,8 +108,9 @@ public class GentlerKBJMain {
 	Files.createDirectories(outputDir);
       }
 
-      PrintWriter explanationWriter = new PrintWriter(new FileWriter(new File(outputDir.toFile(), "explanation.txt")));
-
+      Path outEX = outputDir.resolve("explanation.txt");
+      PrintWriter explanationWriter = new PrintWriter(
+               Files.newBufferedWriter(outEX, StandardCharsets.UTF_8));
       int processed = 0;
       List<Path> txtFiles = new ArrayList<>();
       java.util.stream.Stream<Path> stream = Files.list(inputDir);
@@ -220,7 +221,7 @@ public class GentlerKBJMain {
 	 * by a space.  Need a space at the end to get the last one. */
 	if ((verb + " ").indexOf(pi.bookChapVerse + " ") > 0) {
 	  if (!WordUpgradeUtils.modernizeWord(pi)) {
-	    System.err.println("Row " + i + " not find " + pi.oldWord
+	    System.err.println("Row " + (i + 1) + " not find " + pi.oldWord
 		+ " in " + pi.bookChapVerse
 		+ " " + pi.lineLowerCase);
 	  }
