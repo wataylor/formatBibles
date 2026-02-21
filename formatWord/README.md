@@ -26,4 +26,22 @@ Find verses in the Bible and collect all references to them in one line for use 
 grep ... | sed -E 's/^[^:]*:[[:space:]]*//; s/^(([^[:space:]]+[[:space:]]+){2}).*/\1/; s/[[:space:]]+$//' | paste -sd' ' -
 ```
 
-This keeps text after the colon through the 2nd space, removes the trailing space, and joins with a single space.  This string can be pasted into an Only in: field of the spreadsheet.
+This keeps text after the colon through the 2nd space, removes the trailing space, and joins with a single space.  This string can be pasted into an Only in: field of the spreadsheet. Define this string as an alias:
+
+```bash
+ alias sedRefs="sed -E 's/^[^:]*:[[:space:]]*//; s/^(([^[:space:]]+[[:space:]]+){2}).*/\1/; s/[[:space:]]+$//' | paste -sd' ' -"
+ ```
+
+This **grep** command isolates words by requiring a non-word space both before and after the word. Searching for a word will not find any other forms.
+
+```bash
+grep -P -i '\WBeelzebub\W' *
+```
+
+Combining the two commands:
+
+```bash
+grep -P -i '\WBeelzebub\W' * | sedRefs
+```
+
+produces **MAT 10:25 MAT 12:24 MAT 12:27 MAR 3:22 LUK 11:15 LUK 11:18 LUK 11:19**.
