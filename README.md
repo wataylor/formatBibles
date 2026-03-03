@@ -24,23 +24,29 @@ By a strange coincidence, the default values are what I need to run the programs
 
 This program makes the King James easier to read by changing phrases like “great with child” to “about to give birth” and “with child” to “pregnant.” The original words are put in [] so that Matthew 1:18-19 became:
 
-Now the birth of Jesus Christ was like this [on this wise]: When as his mother Mary was espoused to Joseph, before they came together, she was found pregnant [with child] of the Holy Ghost.  Then Joseph her husband, being a just man, and not willing to make her a publick example, was minded to put her away secretly [privily].
+Now the birth of Jesus Christ was like this [on this wise]: When as his mother Mary was [espoused] {engaged} to Joseph, before they came together, she was found pregnant [with child] of the Holy Ghost.  Then Joseph her husband, being a just man, and not willing to make her a publick example, was minded to put her away secretly [privily].
 
 These updates make no spiritual or doctrinal changes whatsoever. If you find any changes that affect doctrine, **PLEASE SAY SO!!** and we’ll fix it.
 
 Word changes are driven by an Excel file in [this Google Drive folder](https://drive.google.com/drive/folders/1hdicavzgwZQDg9vzcX0BI7uwMEMPS6D2?usp=drive_link):
 
-The 1769 King James chapters whose archaic words are replaced is in the subfolder **KJVText**.
+The .xlsx file has many sheets defining footnotes, important verses, and bible files names which are explained in [The Gentle King James Project](https://docs.google.com/document/d/1YroHALejw5bwmQqKdDp5l4PGsidNIA9zChnktP8deyY/edit?usp=sharing):
+
+The 1769 King James books whose archaic words are replaced is in the subfolder **KJVText**.
+
+A more recent set of book files is in the **kjv-bibleprotector-com** subfolder.  These files were derived from a text file which was downloaded from the Australian site [Bible Protector](https://bibleprotector.com/): Australia is in the British Commonwealth which gives this group close connections to the KJB custodians at Cambridge University.
 
 ## formatWord
 
 This program reads the chapter files modified by **gentlerKJB** and formats them into a .docx file.  Each chapter gets a section with a one-column chapter heading and a two-column section for the verses in the chapter.
 
-The words being changed are listed in the Excel file **KJVWordUpdates.xlsx**. **GentleKJBNT.docx** is a template that defines styles, footers, table of contents, and the introduction. **Injected.xlsx** is created by injecting the modified verses into the template at the proper place.
+The words being changed are listed in the Excel file **KJVWordUpdates.xlsx**. **GentleKJB6x9.docx** is a template that defines styles, footers, table of contents, and the introduction for a 6 inch by 9 inch book. **GentleKJB8x11.docx** is for 8.5 x 11 inch books. The output file command-line argument is created by injecting the modified verses into the template at the proper place.
 
 The spreadsheet also defines footnotes for specific words in specific verses on the **Footnotes** sheet and a list of verse comments which are added to the Table of Contents in the **TOCVerses** sheet.  These sheets are explained in more detail in **The Gentle King James Project** description in the folder.
 
 The program adds a list of all verses that were changed with hyperlinks to the changed verses. That list is followed by a list for each archaic word with hyperlinks to the verses it changed. This should help verify all the changes.
+
+The **snippets** folder has a number of ut8ility programs for manipulating text files and .docx files.
 
 # The Support Jars
 
