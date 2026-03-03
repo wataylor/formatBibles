@@ -1,4 +1,4 @@
-#Format Bibles
+#Format Bibles for Microsoft Word
 
 This program takes a bible formatted as one file per book.  It reads each verse, adds footnotes, TOC entries, and book introductions, and formats the result into a template document.
 
@@ -45,3 +45,15 @@ grep -P -i '\WBeelzebub\W' * | sedRefs
 ```
 
 produces **MAT 10:25 MAT 12:24 MAT 12:27 MAR 3:22 LUK 11:15 LUK 11:18 LUK 11:19**.
+
+## Snippets
+
+- **CompareElectronicBiblesMain**: Compare two folders of book files to verify that all file names and all 31,102 chapter and verse numbers line up across both sources. This makes sure that either source can be used when formatting a gentle bible.
+- **DiscoverStylesMethodsMain**: Use reflection to list XWPFStyles methods to explore POI style APIs.
+- **ListBookmarkReferencesMain**: List bookmarks in a docx and the paragraphs that reference them (excluding _Toc).
+- **ListBookmarksDocxMain**: List bookmark names and the paragraphs where they are defined (excluding _Toc).
+- **ListStylesDocMain**: List styles in a legacy .doc file using HWPF.
+- **ListStylesDocxReflectionMain**: List styles in a docx with style ID, name, and type via reflection.
+- **ParseRtfToRawTextMain**: Convert any RTF file to plain text with inline &lt;i&gt;, &lt;b&gt;, and &lt;u&gt; tags. Other formatting information is ignored.
+- **TxtKJBTo66ChapterFilesMain**: Split a Bible text file into 66 book files in the format expected by **gentlerKJB** and **formatWord**.
+
