@@ -101,7 +101,7 @@ public class FormatWordMain {
       "templateFile=/Sync/Biblical/KJV/Gentle/GentleKJB6x9.docx",
       "newDocName=GentleKJNewTestament.docx",
       "firstFile=40MAT.TXT",
-      "count=67",
+      "count=66",
       "+help",
   };
 
@@ -263,6 +263,14 @@ public class FormatWordMain {
 	String fileName = inputFile.getFileName().toString();
 	if (skip_files.contains(fileName)) { continue; }
 
+	/* Bible book file names begin with a 2-digit number.
+	 * Skip file names which do not.*/
+	try {
+	  Integer.valueOf(fileName.substring(0, 2));
+	} catch (Exception e) {
+	  continue;
+	}
+
 	if (!foundFirst) {
 	  if (fileName.equals(firstFile)) {
 	    foundFirst = true;
@@ -289,7 +297,7 @@ public class FormatWordMain {
 
 	  //Path outputFile = outputDir.resolve(inputFile.getFileName());
 	  //Files.write(outputFile, out, StandardCharsets.UTF_8);
-	  System.out.println("Processed: " + processed + " verses " + verseCount);
+	  System.out.println("Processed: " + processed + " " + inputFile + " verses " + verseCount);
 	  processed++;
 	} catch (Exception e) {
 	  System.out.println("ERR processing " + inputFile + ": " + e.getMessage());
@@ -677,6 +685,9 @@ public class FormatWordMain {
       /* The toc note and link come before the actual verse  */
       processTOCVerse(doc, chapVerse);
 
+      if (verseText.startsWith("<<")) {
+	verseText = processVerseNote(verseText, doc, chapVerse);
+      }
       // Add verse with superscript verse number  // TODO drop cap
       // If bookmark is not null, it is a bookmark that must be set.
       if (verseText.length() > 0) {
@@ -699,6 +710,7 @@ public class FormatWordMain {
 	if (bookmark != null) {
 	  setBookmark(versePara, bookmark);
 	}
+	WordDocxUtils.applyItalicTags(versePara, doc);
       }
     } else {
       /* The toc note and link come before the actual verse  */
@@ -725,9 +737,29 @@ public class FormatWordMain {
 	if (bookmark != null) {
 	  setBookmark(versePara, bookmark);
 	}
+	WordDocxUtils.applyItalicTags(versePara, doc);
       }
     }
     return null;
+  }
+
+  /** The first verse of a chapter may have a note about the
+   * chapter.  These notes begin with {@literal <<} and end with
+   * {@literal >>} followed by a space.
+   * @param verseText String that begins with {@literal <<}
+   * @param doc The document
+   * @param chapVerse Identifies the chapter and verse for error messages
+   * @return verse text with the note stripped out of it
+   */
+  public static String processVerseNote(String verseText, XWPFDocument doc, String chapVerse) {
+    int ix = verseText.indexOf(">>");
+    if (ix < 0) {
+      System.out.println("ERR in verse note " + chapVerse + " " + verseText);
+      return verseText;
+    }
+    String note = verseText.substring(2, ix); // Skip the <<
+    WordDocxUtils.addSplitHeading2Para(doc, "", note);
+    return verseText.substring(ix+3); // skip >> and the space
   }
 
   /** Check to see if this verse should be preceded by a note which
