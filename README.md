@@ -10,13 +10,17 @@ The first program reads an Excel spreadsheet listing archaic words and more mode
 
 The second program formats the raw text into a print-ready .docx file which can be edited as desired.
 
+# Public git Repository
+
+The source code is in a public git repository [formatBibles](git@github.com:wataylor/formatBibles.git).  The program also uses some .docx and .xlsx files which are stored in [The Gentle King James Project](https://drive.google.com/drive/folders/1hdicavzgwZQDg9vzcX0BI7uwMEMPS6D2?usp=drive_link) public folder.
+
 # Building All System Components
 
-The top-level **pom.xml** should build all system components including the Important Jars and the Support Jars.  
+The top-level **pom.xml** builds the Important Jars and the Support Jars.  
 
 # The Important Jars in the Repo
 
-This repo generates two executable .jar files: **gentlerKJB** and **formatWord**.  They're run with **java -jar <filename> <command args>**. I can never remeber all the arguments, so each executable has a **+help** argument which documents the default argument values and exits.
+This repo generates two executable .jar files: **gentlerKJB** and **formatWord**.  They're run with **java -jar <filename> <command args>**. I can never remember all the arguments, so each executable has a **+help** argument which documents the default argument values and exits.
 
 By a strange coincidence, the default values are what I need to run the programs based on where I chose to put the input and output files. **+help** is a default value so running the program with no arguments explains the documents and exists. If you want it to run, use **-help** to override the **+help**.
 
@@ -52,9 +56,22 @@ The **snippets** folder has a number of ut8ility programs for manipulating text 
 
 **commonClasses** builds a .jar file containing command utilities for parsing command-line arguments and for reading Excel spreadsheets.
 
-**fixFonts** generates an executable .jar file which sets all fonts in a .docx file to a specified value.  This is useful because Microsoft Word tends to hide font names in various places which are explored by this program.  A hidden font may not be embeddable.  If you want to produce a .pdf file containing only embeddable fonts, choosing an embeddable font for all uses in the document is a good first step.
+**fixFonts** generates an executable .jar file which sets fonts in a .docx file to a specified value.  This is useful because Microsoft Word hides font names in many places.  A hidden font may not be embeddable.  If you want to produce a .pdf file containing only embeddable fonts, choosing an embeddable font for all uses in the document is a good first step.
 
-If you save a .docx as a .pdf, Word sometimes includes Ariel for reasons known only to Microsoft.  In that case, using the Microsoft "Print as PDF" printer seems to include only embeddable fonts.  If that doesn't work for you, try another .docx to .pdf converter.
+The current version updates fonts in these major locations:
+- styles and document defaults (`styles.xml`, `stylesWithEffects.xml`, including latent/default font nodes)
+- numbering (`numbering.xml` list level and run font settings)
+- themes (`/word/theme/*.xml`, including major/minor latin/ea/cs and script fonts)
+- main document runs (`document.xml`) and runs in headers, footers, footnotes, and endnotes
+- comments, settings defaults, and `fontTable.xml`
+
+Command line:
+- `SetAllStylesToAFontMain [-verbose] "Font Name" "path\\to\\file.docx"`
+- `-verbose` enables detailed diagnostics for troubleshooting unusual Word behavior.
+
+If you save a .docx as a .pdf, Word sometimes includes the Arial font for reasons known only to Microsoft but refuses to embed it.  Your .pdf file will be rejected by recipients who insist on embedded fonts.  In that case, using the Microsoft ""Print as PDF** printer may help because it seems to use only embeddable fonts.
+
+If that won't work because it doesn't support your paper size, try using **Save As PDF** but before hitting **Save**, click **Options** and check the **ISO 9005-1 compliant (PDF/A)** box.  ISO 9005-1 .pdf files must include embedded fonts.  This forces Word to include Airal as an embedded font.
 
 # ✨ I'm A Geek
 
@@ -78,6 +95,7 @@ This project contains a collection of Java “spells” built on [Apache POI](ht
 - **Footnote spells**: Add footnotes programmatically.
 - **Index entry spells**: Insert XE fields for building an index.
 - **Split heading spells**: Style headings and following text correctly.
+- **Inline italics tag spell**: Convert balanced `<i>...</i>` markers into true italic runs.
 - **Cross‑reference appendix**: Auto-generate a paragraph of hyperlinks to all bookmarks.
 - **JUnit 5 test suite**: Verifies XML structures so you don’t need to open Word every time.
 
@@ -155,6 +173,17 @@ Creates a hyperlink labeled `"source"` that jumps to the bookmark `"target"`.
 
 ---
 
+### Convert `<i>` Tags to Italic Runs
+```java
+XWPFParagraph para = doc.createParagraph();
+para.createRun().setText("This is <i>important</i> text.");
+WordDocxUtils.applyItalicTags(para, doc);
+```
+
+Removes the `<i>` and `</i>` markers from visible text and formats the enclosed phrase in italics.
+
+---
+
 ### Generate a Cross‑Reference Appendix
 ```java
 List<String[]> refs = List.of(
@@ -200,6 +229,8 @@ Currently covered:
   - Check that the paragraph contains the correct `XE` field instruction.
 - **Split headings**
   - Ensure heading styles (`Heading2`, `Normal`) are applied to the right paragraphs.
+- **Inline italics tag conversion**
+  - Verify balanced `<i>...</i>` markers are removed and converted to italic runs.
 - **Hyperlinks to bookmarks**
   - Verify that hyperlinks contain the correct anchor and visible text.
 - **Cross‑reference appendix**
