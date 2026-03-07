@@ -64,7 +64,7 @@ public class WordDocxUtilsTest {
     boolean hasXE = para.getCTP().getRArray().length > 0 &&
         para.getCTP().getRArray(0).getFldCharList().size() > 0;
     assertTrue(hasXE, "Index entry field should be present");
-     
+
   }
 
   @Test
@@ -93,6 +93,94 @@ public class WordDocxUtilsTest {
     // Verify the visible text of the hyperlink
     String text = hyperlink.getRArray(0).getTArray(0).getStringValue();
     assertEquals("source", text);
+  }
+
+  @Test
+  public void testApplyItalicTagsMultiplePhrases() {
+    XWPFParagraph para = doc.createParagraph();
+    para.createRun().setText("Start <i>first</i> middle <i>second</i> end");
+
+    WordDocxUtils.applyItalicTags(para, doc);
+
+    assertEquals("Start first middle second end", para.getText());
+    assertEquals(5, para.getRuns().size());
+
+    assertEquals("Start ", para.getRuns().get(0).text());
+    assertFalse(para.getRuns().get(0).isItalic());
+
+    assertEquals("first", para.getRuns().get(1).text());
+    assertTrue(para.getRuns().get(1).isItalic());
+
+    assertEquals(" middle ", para.getRuns().get(2).text());
+    assertFalse(para.getRuns().get(2).isItalic());
+
+    assertEquals("second", para.getRuns().get(3).text());
+    assertTrue(para.getRuns().get(3).isItalic());
+
+    assertEquals(" end", para.getRuns().get(4).text());
+    assertFalse(para.getRuns().get(4).isItalic());
+  }
+
+  @Test
+  public void testApplyItalicTagsAtStartAndEnd() {
+    XWPFParagraph para = doc.createParagraph();
+    para.createRun().setText("<i>Lead</i> and tail <i>Finish</i>");
+
+    WordDocxUtils.applyItalicTags(para, doc);
+
+    assertEquals("Lead and tail Finish", para.getText());
+    assertEquals(3, para.getRuns().size());
+
+    assertEquals("Lead", para.getRuns().get(0).text());
+    assertTrue(para.getRuns().get(0).isItalic());
+
+    assertEquals(" and tail ", para.getRuns().get(1).text());
+    assertFalse(para.getRuns().get(1).isItalic());
+
+    assertEquals("Finish", para.getRuns().get(2).text());
+    assertTrue(para.getRuns().get(2).isItalic());
+  }
+
+  @Test
+  public void testApplyItalicTagsPreservesSuperscriptRun() {
+    XWPFParagraph para = doc.createParagraph();
+
+    XWPFRun verseNumRun = para.createRun();
+    verseNumRun.setText("12 ");
+    verseNumRun.setSubscript(VerticalAlign.SUPERSCRIPT);
+
+    XWPFRun textRun = para.createRun();
+    textRun.setText("This is <i>important</i> text.");
+
+    WordDocxUtils.applyItalicTags(para, doc);
+
+    assertEquals("12 This is important text.", para.getText());
+    assertTrue(para.getRuns().size() >= 3);
+
+    XWPFRun firstRun = para.getRuns().get(0);
+    assertEquals("12 ", firstRun.text());
+    assertTrue(firstRun.getCTR().isSetRPr());
+    assertTrue(firstRun.getCTR().getRPr().sizeOfVertAlignArray() > 0);
+    assertEquals(STVerticalAlignRun.SUPERSCRIPT, firstRun.getCTR().getRPr().getVertAlignArray(0).getVal());
+    assertFalse(firstRun.isItalic());
+
+    assertTrue(para.getRuns().stream().anyMatch(r -> "important".equals(r.text()) && r.isItalic()));
+  }
+
+  @Test
+  public void testApplyItalicTagsAcrossRunBoundaries() {
+    XWPFParagraph para = doc.createParagraph();
+
+    para.createRun().setText("Start <i>mul");
+    para.createRun().setText("ti run</i> finish");
+
+    WordDocxUtils.applyItalicTags(para, doc);
+
+    assertEquals("Start multi run finish", para.getText());
+
+    boolean hasItalicMultiRun = para.getRuns().stream()
+	.anyMatch(r -> "multi run".equals(r.text()) && r.isItalic());
+    assertTrue(hasItalicMultiRun, "Combined italic phrase across original runs should be italic");
   }
 
   @Test

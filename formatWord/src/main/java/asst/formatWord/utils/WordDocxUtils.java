@@ -4,9 +4,11 @@ import org.apache.poi.xwpf.usermodel.*;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.*;
 import java.io.FileOutputStream;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 /** A set of magic spells to add new items to a XWPFDocument doc.</p>
- * 
+ *
  * <p>Footnotes and bookmarks are numbered starting at one in the document.
  * The footnote and bookmark counters are not thread-safe.
  * When the document is inserted into another Word document, Word
@@ -27,7 +29,11 @@ public class WordDocxUtils {
   private static int footnoteCounter = 1;  // not thread safe
   private static int bookmarkCounter = 1;  // not thread safe
 
-  /** Superscript spell */
+  /** Superscript spell
+   * @param doc The Word document
+   * @param superText Text to be in superscript
+   * @param normalText Text to be normal
+   * @return A new paragraph */
   public static XWPFParagraph addSuperscriptParagraph(XWPFDocument doc,
       String superText,
       String normalText) {
@@ -41,7 +47,10 @@ public class WordDocxUtils {
     return para;
   }
 
-  /** Footnote spells */
+  /** Footnote spells
+   * @param para Paragraph in the document
+   * @param doc The Word document
+   * @param footnoteText The text of the footnote */
   public static void addFootnote(XWPFParagraph para, XWPFDocument doc, String footnoteText) {
     XWPFRun run = para.createRun();
     run.setStyle("FootnoteReference");
@@ -53,11 +62,12 @@ public class WordDocxUtils {
     XWPFParagraph footnotePara = footnote.createParagraph();
     footnotePara.setStyle("FootnoteText");
     footnotePara.createRun().setText(footnoteText);
+    applyItalicTags(footnotePara, doc);
 
     footnoteCounter++;
   }
 
-  /** Add a paragraph with a footnote reference at a specified position in the text 
+  /** Add a paragraph with a footnote reference at a specified position in the text
    * @param para The paragraph to add the footnote to
    * @param doc The document (needed to create the footnote)
    * @param text The paragraph text
@@ -141,7 +151,152 @@ public class WordDocxUtils {
     }
   }
 
-  /** Bookmark spell */
+  /**
+   * Replace balanced HTML-like italic tags in paragraph text with true italic runs.
+   * The markers &lt;i&gt; and &lt;/i&gt; are removed from visible text.
+   *
+   * <p>Example: {@code this is <i>very</i> important} becomes three runs:
+   * normal "this is ", italic "very", normal " important".</p>
+   *
+   * @param para paragraph whose text may contain balanced {@code <i>} markers
+   * @param doc document containing the paragraph (included for API consistency)
+   */
+  public static void applyItalicTags(XWPFParagraph para, XWPFDocument doc) {
+    List<XWPFRun> originalRuns = para.getRuns();
+    if (originalRuns == null || originalRuns.isEmpty()) {
+      return;
+    }
+
+    StringBuilder fullTextBuilder = new StringBuilder();
+    List<XWPFRun> runByCharIndex = new ArrayList<>();
+    for (XWPFRun run : originalRuns) {
+      String runText = run.text();
+      if (runText == null || runText.isEmpty()) {
+        continue;
+      }
+      for (int i = 0; i < runText.length(); i++) {
+        fullTextBuilder.append(runText.charAt(i));
+        runByCharIndex.add(run);
+      }
+    }
+
+    String text = fullTextBuilder.toString();
+    if (text.isEmpty()) {
+      return;
+    }
+
+    if (!text.contains("<i>") && !text.contains("</i>")) {
+      return;
+    }
+
+    List<RunChunk> chunks = new ArrayList<>();
+    StringBuilder chunkText = new StringBuilder();
+    CTRPr chunkSourceRPr = null;
+    boolean italic = false;
+    boolean chunkItalic = false;
+
+    int cursor = 0;
+    while (cursor < text.length()) {
+      if (text.startsWith("<i>", cursor)) {
+        if (chunkText.length() > 0) {
+          chunks.add(new RunChunk(chunkText.toString(), chunkSourceRPr, chunkItalic));
+          chunkText.setLength(0);
+        }
+        italic = true;
+        cursor += 3;
+        continue;
+      }
+
+      if (text.startsWith("</i>", cursor)) {
+        if (chunkText.length() > 0) {
+          chunks.add(new RunChunk(chunkText.toString(), chunkSourceRPr, chunkItalic));
+          chunkText.setLength(0);
+        }
+        italic = false;
+        cursor += 4;
+        continue;
+      }
+
+      XWPFRun sourceRun = runByCharIndex.get(cursor);
+      if (chunkText.length() == 0) {
+        chunkSourceRPr = copyRunProperties(sourceRun);
+        chunkItalic = italic;
+      } else if (!sameRunProperties(sourceRun, chunkSourceRPr) || italic != chunkItalic) {
+        chunks.add(new RunChunk(chunkText.toString(), chunkSourceRPr, chunkItalic));
+        chunkText.setLength(0);
+        chunkSourceRPr = copyRunProperties(sourceRun);
+        chunkItalic = italic;
+      }
+
+      chunkText.append(text.charAt(cursor));
+      cursor++;
+    }
+
+    if (chunkText.length() > 0) {
+      chunks.add(new RunChunk(chunkText.toString(), chunkSourceRPr, chunkItalic));
+    }
+
+    for (int i = para.getRuns().size() - 1; i >= 0; i--) {
+      para.removeRun(i);
+    }
+
+    for (RunChunk chunk : chunks) {
+      addTextRun(para, chunk.text, chunk.italic, chunk.sourceRPr);
+    }
+  }
+
+  /** Add a text run with optional italic formatting. */
+  private static void addTextRun(XWPFParagraph para, String text, boolean italic, CTRPr sourceRPr) {
+    if (text == null || text.isEmpty()) {
+      return;
+    }
+
+    XWPFRun run = para.createRun();
+    if (sourceRPr != null) {
+      run.getCTR().setRPr((CTRPr) sourceRPr.copy());
+    }
+    run.setItalic(italic);
+    run.setText(text);
+  }
+
+  /** Copy run properties if present. */
+  private static CTRPr copyRunProperties(XWPFRun run) {
+    if (run == null || run.getCTR() == null || !run.getCTR().isSetRPr()) {
+      return null;
+    }
+    return (CTRPr) run.getCTR().getRPr().copy();
+  }
+
+  /** Compare run properties object identity by underlying XML equality fallback. */
+  private static boolean sameRunProperties(XWPFRun run, CTRPr rPr) {
+    CTRPr runRPr = copyRunProperties(run);
+    if (runRPr == null && rPr == null) {
+      return true;
+    }
+    if (runRPr == null || rPr == null) {
+      return false;
+    }
+    return runRPr.xmlText().equals(rPr.xmlText());
+  }
+
+  /** Piece of rebuilt paragraph text with source formatting and italic state. */
+  private static class RunChunk {
+    private final String text;
+    private final CTRPr sourceRPr;
+    private final boolean italic;
+
+    private RunChunk(String text, CTRPr sourceRPr, boolean italic) {
+      this.text = text;
+      this.sourceRPr = sourceRPr;
+      this.italic = italic;
+    }
+  }
+
+  /** Bookmark spell
+   * @param doc Word document
+   * @param bookmarkName Name of the bookmark being added
+   * @param text Text of the paragraph which is to be the start
+   * and end of the marked text. */
   public static void addBookmarkParagraph(XWPFDocument doc,
       String bookmarkName,
       String text) {
@@ -157,7 +312,9 @@ public class WordDocxUtils {
     bookmarkCounter++;
   }
 
-  /** Index entry spell */
+  /** Index entry spell
+   * @param para A paragraph in the document
+   * @param entryText Index entry text. */
   public static void addIndexEntry(XWPFParagraph para, String entryText) {
     XWPFRun runBegin = para.createRun();
     CTFldChar fldCharBegin = runBegin.getCTR().addNewFldChar();
@@ -175,7 +332,10 @@ public class WordDocxUtils {
     fldCharEnd.setFldCharType(STFldCharType.END);
   }
 
-  /** Split heading spell */
+  /** Split heading spell
+   * @param doc Word document
+   * @param headingText Text to go into a level 2 heading
+   * @param trailingText Text to follow the heading text in the paragraph.*/
   public static void addSplitHeading(XWPFDocument doc,
       String headingText,
       String trailingText) {
@@ -194,33 +354,38 @@ public class WordDocxUtils {
    * appears in the TOC, but the second part is visible in the document.
    * This is achieved by creating two paragraphs where the first has a hidden
    * paragraph marker (vanish and specVanish).
+   * The results can be odd if both strings are empty.
    * @param doc The document
    * @param headingText Text that will appear in TOC
+   * If this is empty, the trailing text becomes the only paragraph added.
    * @param trailingText Additional text that won't appear in TOC
    */
   public static void addSplitHeading2Para(XWPFDocument doc,
       String headingText,
       String trailingText) {
-    // First paragraph with Heading2 style
-    XWPFParagraph headingPara = doc.createParagraph();
-    headingPara.setStyle("Heading2");
+    if ((headingText != null) && (headingText.length() > 0)) {
+      // First paragraph with Heading2 style
+      XWPFParagraph headingPara = doc.createParagraph();
+      headingPara.setStyle("Heading2");
 
-    // Add the heading text
-    XWPFRun headingRun = headingPara.createRun();
-    headingRun.setText(headingText);
+      // Add the heading text
+      XWPFRun headingRun = headingPara.createRun();
+      headingRun.setText(headingText);
 
-    if ((trailingText == null) || trailingText.isEmpty()) { return; }
+      if ((trailingText == null) || trailingText.isEmpty()) { return; }
 
-    // Make the paragraph marker hidden (this is the style separator)
-    CTPPr pPr = headingPara.getCTP().isSetPPr() ? headingPara.getCTP().getPPr() : headingPara.getCTP().addNewPPr();
-    org.openxmlformats.schemas.wordprocessingml.x2006.main.CTParaRPr rPr = pPr.addNewRPr();
-    rPr.addNewVanish();
-    rPr.addNewSpecVanish();
+      // Make the paragraph marker hidden (this is the style separator)
+      CTPPr pPr = headingPara.getCTP().isSetPPr() ? headingPara.getCTP().getPPr() : headingPara.getCTP().addNewPPr();
+      org.openxmlformats.schemas.wordprocessingml.x2006.main.CTParaRPr rPr = pPr.addNewRPr();
+      rPr.addNewVanish();
+      rPr.addNewSpecVanish();
+    }
 
     // Second paragraph with the trailing text (no heading style)
     XWPFParagraph trailingPara = doc.createParagraph();
     XWPFRun trailingRun = trailingPara.createRun();
     trailingRun.setText(" " + trailingText);
+    applyItalicTags(trailingPara, doc);
   }
 
   /**
@@ -266,7 +431,11 @@ public class WordDocxUtils {
     }
   }
 
-  // Example save method
+  /** Example save method
+   * @param doc Word document
+   * @param filename File name where it should be saved
+   * @throws Exception when writing the file goes wrong
+   */
   public static void saveDoc(XWPFDocument doc, String filename) throws Exception {
     try (FileOutputStream out = new FileOutputStream(filename)) {
       doc.write(out);
