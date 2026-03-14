@@ -58,19 +58,22 @@ public class FormatWordMain {
   /** Describe the purpose of the command line args for the Help function.  */
   public static Map<String, String> argDescs = new HashMap<String, String>();
 
-  /* Page size and margin constants twips (one twentieth of a point).
-   * 1 inch = 1440 twips.
-   * These values give 6 x 9 inches */
-  private static BigInteger PAGE_WIDTH = BigInteger.valueOf(8640);   // 6 inches (8.5" = 12240)
-  private static BigInteger PAGE_HEIGHT = BigInteger.valueOf(12960); // 9 inches (11" = 15840)
+  /* Default page size and margins used only when the template does not define them.
+   * twips: one twentieth of a point, 1 inch = 1440 twips. */
+  private static BigInteger DEFAULT_PAGE_WIDTH = BigInteger.valueOf(8640);   // 6 inches
+  private static BigInteger DEFAULT_PAGE_HEIGHT = BigInteger.valueOf(12960); // 9 inches
   private static BigInteger GUTTER = BigInteger.valueOf(288);  // 360 is 0.25 inch gutter, 0.2 inch = 288 twips
   private static boolean WANT_LINE_BETWEEN = true;
-  private static final BigInteger MARGIN_TOP = BigInteger.valueOf(720);    // 0.5 inch
-  private static final BigInteger MARGIN_BOTTOM = BigInteger.valueOf(720); // 0.5 inch
-  private static final BigInteger MARGIN_LEFT = BigInteger.valueOf(720);   // 0.5 inch
-  private static final BigInteger MARGIN_RIGHT = BigInteger.valueOf(720);  // 0.5 inch
-  private static final BigInteger MARGIN_HEADER = BigInteger.valueOf(720);  // 0.5 inch
-  private static final BigInteger MARGIN_FOOTER = BigInteger.valueOf(720);  // 0.5 inch
+  private static final BigInteger DEFAULT_MARGIN_TOP = BigInteger.valueOf(720);    // 0.5 inch
+  private static final BigInteger DEFAULT_MARGIN_BOTTOM = BigInteger.valueOf(720); // 0.5 inch
+  private static final BigInteger DEFAULT_MARGIN_LEFT = BigInteger.valueOf(720);   // 0.5 inch
+  private static final BigInteger DEFAULT_MARGIN_RIGHT = BigInteger.valueOf(720);  // 0.5 inch
+  private static final BigInteger DEFAULT_MARGIN_HEADER = BigInteger.valueOf(720);  // 0.5 inch
+  private static final BigInteger DEFAULT_MARGIN_FOOTER = BigInteger.valueOf(720);  // 0.5 inch
+
+  /** Template page settings copied once and re-used for every generated section. */
+  private static CTPageSz templatePageSz = null;
+  private static CTPageMar templatePageMar = null;
 
   static {
     argDescs.put("help", "If \"+help\" is specified, nothing else is run."
@@ -244,6 +247,7 @@ public class FormatWordMain {
 	throw new RuntimeException("Template file " + templateFile + " cannot be read.");
       }
       XWPFDocument doc = new XWPFDocument(new FileInputStream(templateFileObj));
+      loadPageLayoutTemplate(doc);
 
       // Add section break to end the template's last section
       XWPFParagraph templateEndPara = doc.createParagraph();
@@ -417,19 +421,51 @@ public class FormatWordMain {
   /** Apply standard page size and margins to a section.  This has to
    * be done for all sections created. */
   private static void setPageSizeAndMargins(CTSectPr sectPr) {
-    // Set page size
-    CTPageSz pageSz = sectPr.addNewPgSz();
-    pageSz.setW(PAGE_WIDTH);
-    pageSz.setH(PAGE_HEIGHT);
+    // Copy page settings from the template when available.
+    if (templatePageSz != null) {
+      sectPr.addNewPgSz().set(templatePageSz);
+    } else {
+      CTPageSz pageSz = sectPr.addNewPgSz();
+      pageSz.setW(DEFAULT_PAGE_WIDTH);
+      pageSz.setH(DEFAULT_PAGE_HEIGHT);
+    }
 
-    // Set margins
-    CTPageMar pageMar = sectPr.addNewPgMar();
-    pageMar.setTop(MARGIN_TOP);
-    pageMar.setBottom(MARGIN_BOTTOM);
-    pageMar.setLeft(MARGIN_LEFT);
-    pageMar.setRight(MARGIN_RIGHT);
-    pageMar.setHeader(MARGIN_HEADER);
-    pageMar.setFooter(MARGIN_FOOTER);
+    if (templatePageMar != null) {
+      sectPr.addNewPgMar().set(templatePageMar);
+    } else {
+      CTPageMar pageMar = sectPr.addNewPgMar();
+      pageMar.setTop(DEFAULT_MARGIN_TOP);
+      pageMar.setBottom(DEFAULT_MARGIN_BOTTOM);
+      pageMar.setLeft(DEFAULT_MARGIN_LEFT);
+      pageMar.setRight(DEFAULT_MARGIN_RIGHT);
+      pageMar.setHeader(DEFAULT_MARGIN_HEADER);
+      pageMar.setFooter(DEFAULT_MARGIN_FOOTER);
+    }
+  }
+
+  /** Capture page size/margins from the template's section settings. */
+  private static void loadPageLayoutTemplate(XWPFDocument doc) {
+    CTSectPr sourceSectPr = doc.getDocument().getBody().getSectPr();
+    if (sourceSectPr == null) {
+      List<XWPFParagraph> paragraphs = doc.getParagraphs();
+      for (int i = paragraphs.size() - 1; i >= 0 && sourceSectPr == null; i--) {
+        CTPPr pPr = paragraphs.get(i).getCTP().getPPr();
+        if (pPr != null && pPr.isSetSectPr()) {
+          sourceSectPr = pPr.getSectPr();
+        }
+      }
+    }
+
+    if (sourceSectPr != null) {
+      if (sourceSectPr.isSetPgSz()) {
+        templatePageSz = CTPageSz.Factory.newInstance();
+        templatePageSz.set(sourceSectPr.getPgSz());
+      }
+      if (sourceSectPr.isSetPgMar()) {
+        templatePageMar = CTPageMar.Factory.newInstance();
+        templatePageMar.set(sourceSectPr.getPgMar());
+      }
+    }
   }
 
   private static void endTheChapter(int chapNum, WorkbookManager wm, XWPFDocument doc) {
@@ -670,7 +706,7 @@ public class FormatWordMain {
 
     // If verse 1, add chapter heading and verse with drop cap
     if ("1".equals(verseNum)) {
-      // Add chapter heading
+      /* Add chapter heading
       XWPFParagraph chapterPara = doc.createParagraph();
       chapterPara.setAlignment(ParagraphAlignment.CENTER);
 
@@ -681,6 +717,7 @@ public class FormatWordMain {
       XWPFRun run = chapterPara.createRun();
       run.setBold(true);
       run.setText("Chapter " + chapterNum);
+      */
 
       /* The toc note and link come before the actual verse  */
       processTOCVerse(doc, chapVerse);
@@ -694,10 +731,11 @@ public class FormatWordMain {
 	XWPFParagraph versePara = doc.createParagraph();
 	versePara.setStyle("FAH");
 
-	// Add superscript verse number
+	/* Add superscript verse number
 	XWPFRun verseNumRun = versePara.createRun();
 	verseNumRun.setText(verseNum);
 	verseNumRun.setSubscript(VerticalAlign.SUPERSCRIPT);
+	*/
 
 	// Add verse text
 	if (footnoteData != null) {
@@ -711,6 +749,7 @@ public class FormatWordMain {
 	  setBookmark(versePara, bookmark);
 	}
 	WordDocxUtils.applyItalicTags(versePara, doc);
+	WordDocxUtils.dropTextBox(versePara, doc, chapterNum);
       }
     } else {
       /* The toc note and link come before the actual verse  */
