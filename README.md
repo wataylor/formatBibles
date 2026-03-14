@@ -50,7 +50,7 @@ The spreadsheet also defines footnotes for specific words in specific verses on 
 
 The program adds a list of all verses that were changed with hyperlinks to the changed verses. That list is followed by a list for each archaic word with hyperlinks to the verses it changed. This should help verify all the changes.
 
-The **snippets** folder has a number of ut8ility programs for manipulating text files and .docx files.
+The **snippets** folder has a number of utility programs for manipulating text files and .docx files.
 
 # The Support Jars
 
@@ -88,7 +88,7 @@ This project wouldn’t have been practical as an unpaid ministry without the he
 This project contains a collection of Java “spells” built on [Apache POI](https://poi.apache.org/) for automating the creation of Word `.docx` documents. Each spell encapsulates a discrete trick — inserting bookmarks, footnotes, index entries, hyperlinks, and more — with accompanying JUnit tests to ensure reliability.
 
 
-## 🛠 Features
+### 🛠 Features
 
 - **Bookmark spells**: Insert named bookmarks anywhere in a document.
 - **Hyperlink spells**: Create cross references that jump to bookmarks when clicked in Word or in generated .html files.
@@ -96,6 +96,7 @@ This project contains a collection of Java “spells” built on [Apache POI](ht
 - **Index entry spells**: Insert XE fields for building an index.
 - **Split heading spells**: Style headings and following text correctly.
 - **Inline italics tag spell**: Convert balanced `<i>...</i>` markers into true italic runs.
+- **Drop Text spell**: Put a text box containing a string at the beginning of a paragraph for chapter numbers.
 - **Cross‑reference appendix**: Auto-generate a paragraph of hyperlinks to all bookmarks.
 - **JUnit 5 test suite**: Verifies XML structures so you don’t need to open Word every time.
 
