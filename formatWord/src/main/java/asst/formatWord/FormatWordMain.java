@@ -731,6 +731,11 @@ public class FormatWordMain {
 	XWPFParagraph versePara = doc.createParagraph();
 	versePara.setStyle("FAH");
 
+	// Temporary workaround: insert chapter number as a character-styled run.
+	XWPFRun dropTextRun = versePara.createRun();
+	dropTextRun.setStyle("DropText");
+	dropTextRun.setText(chapterNum);
+
 	/* Add superscript verse number
 	XWPFRun verseNumRun = versePara.createRun();
 	verseNumRun.setText(verseNum);
@@ -749,7 +754,7 @@ public class FormatWordMain {
 	  setBookmark(versePara, bookmark);
 	}
 	WordDocxUtils.applyItalicTags(versePara, doc);
-	WordDocxUtils.dropTextBox(versePara, doc, chapterNum);
+	// WordDocxUtils.dropTextBox(versePara, doc, chapterNum);
       }
     } else {
       /* The toc note and link come before the actual verse  */
