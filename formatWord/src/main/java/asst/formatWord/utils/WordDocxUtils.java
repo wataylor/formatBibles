@@ -2,6 +2,7 @@ package asst.formatWord.utils;
 
 import org.apache.poi.xwpf.usermodel.*;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.*;
+import org.apache.xmlbeans.XmlCursor;
 import java.io.FileOutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -411,6 +412,169 @@ public class WordDocxUtils {
 
     // Attach run to hyperlink
     ctHyperlink.addNewR().set(ctr);
+  }
+
+  /**
+   * Insert a borderless floating text box at the front of the paragraph, styled
+   * like the paragraph but with doubled font size to mimic a drop-cap string.
+   * The text box wraps with surrounding text.
+   * @param para target paragraph
+   * @param doc document containing styles
+   * @param dropText text to show in the floating box
+   */
+  public static void dropTextBox(XWPFParagraph para, XWPFDocument doc, String dropText) {
+    if (para == null || doc == null || dropText == null || dropText.isEmpty()) {
+      return;
+    }
+
+    int baseHalfPoints = resolveParagraphStyleFontSizeHalfPoints(para, doc);
+    int dropHalfPoints = Math.max(2, baseHalfPoints * 2);
+    int dropPointSize = Math.max(1, dropHalfPoints / 2);
+
+    double widthPt = Math.max(24.0, (dropText.length() * dropPointSize * 0.62) + 6.0);
+    double heightPt = Math.max(18.0, (dropPointSize * 1.35));
+
+    XWPFRun run = para.insertNewRun(0);
+    CTPicture pict = run.getCTR().addNewPict();
+    XmlCursor cursor = pict.newCursor();
+    try {
+      final String nsV = "urn:schemas-microsoft-com:vml";
+      final String nsO = "urn:schemas-microsoft-com:office:office";
+      final String nsW = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+      final String nsW10 = "urn:schemas-microsoft-com:office:word";
+
+      cursor.toEndToken();
+      cursor.beginElement("shape", nsV);
+      cursor.insertAttributeWithValue("id", "dropTextBox" + System.nanoTime());
+      cursor.insertAttributeWithValue("type", "#_x0000_t202");
+      cursor.insertAttributeWithValue(
+          "style",
+          "position:absolute;"
+              + "margin-left:0pt;"
+              + "margin-top:0pt;"
+            + "width:" + String.format(java.util.Locale.ROOT, "%.2f", widthPt) + "pt;"
+            + "height:" + String.format(java.util.Locale.ROOT, "%.2f", heightPt) + "pt;"
+              + "z-index:251659264;"
+              + "mso-position-horizontal:left;"
+              + "mso-position-horizontal-relative:text;"
+              + "mso-position-vertical:top;"
+              + "mso-position-vertical-relative:line;"
+            + "mso-wrap-style:square;");
+      cursor.insertAttributeWithValue("stroked", "f");
+      cursor.insertAttributeWithValue("filled", "f");
+
+      cursor.beginElement("wrap", nsW10);
+      cursor.insertAttributeWithValue("type", "square");
+      cursor.toEndToken();
+
+      cursor.beginElement("textbox", nsV);
+      cursor.insertAttributeWithValue("style", "mso-fit-shape-to-text:t;inset:0,0,0,0");
+
+      cursor.beginElement("txbxContent", nsW);
+      cursor.beginElement("p", nsW);
+      boolean hasDropTextStyle = hasStyle(doc, "DropText");
+      String styleId = hasDropTextStyle ? "DropText" : para.getStyleID();
+      if (styleId != null && !styleId.isEmpty()) {
+        cursor.beginElement("pPr", nsW);
+        cursor.beginElement("pStyle", nsW);
+        cursor.insertAttributeWithValue("val", nsW, styleId);
+        cursor.toEndToken();
+        cursor.toEndToken();
+      }
+
+      cursor.beginElement("r", nsW);
+      if (!hasDropTextStyle) {
+        // Fallback: retain the existing doubled-size behavior when DropText style is absent.
+        cursor.beginElement("rPr", nsW);
+        cursor.beginElement("sz", nsW);
+        cursor.insertAttributeWithValue("val", nsW, Integer.toString(dropHalfPoints));
+        cursor.toEndToken();
+        cursor.beginElement("szCs", nsW);
+        cursor.insertAttributeWithValue("val", nsW, Integer.toString(dropHalfPoints));
+        cursor.toEndToken();
+        cursor.toEndToken();
+      }
+
+      cursor.beginElement("t", nsW);
+      cursor.insertChars(dropText);
+      cursor.toEndToken();
+
+      cursor.toEndToken();
+      cursor.toEndToken();
+      cursor.toEndToken();
+      cursor.toEndToken();
+      cursor.toEndToken();
+      cursor.toEndToken();
+
+      cursor.beginElement("lock", nsO);
+      cursor.insertAttributeWithValue("ext", nsV, "edit");
+      cursor.insertAttributeWithValue("anchorlock", "t");
+      cursor.toEndToken();
+
+      cursor.toEndToken();
+    } finally {
+      cursor.dispose();
+    }
+  }
+
+  /** Resolve paragraph style font size in half-points (hps), with fallback. */
+  private static int resolveParagraphStyleFontSizeHalfPoints(XWPFParagraph para, XWPFDocument doc) {
+    int fallback = 22; // 11pt
+
+    String styleId = para.getStyleID();
+    if (styleId == null || styleId.isEmpty()) {
+      return fallback;
+    }
+
+    XWPFStyles styles = doc.getStyles();
+    if (styles == null) {
+      return fallback;
+    }
+
+    return resolveStyleFontSizeHalfPoints(styles, styleId, 0, fallback);
+  }
+
+  /** Check whether the document defines a style with the given id. */
+  private static boolean hasStyle(XWPFDocument doc, String styleId) {
+    if (doc == null || styleId == null || styleId.isEmpty()) {
+      return false;
+    }
+    XWPFStyles styles = doc.getStyles();
+    return styles != null && styles.getStyle(styleId) != null;
+  }
+
+  /** Resolve style font size recursively through basedOn chain. */
+  private static int resolveStyleFontSizeHalfPoints(XWPFStyles styles,
+      String styleId,
+      int depth,
+      int fallback) {
+    if (styleId == null || styleId.isEmpty() || depth > 12) {
+      return fallback;
+    }
+
+    XWPFStyle style = styles.getStyle(styleId);
+    if (style == null || style.getCTStyle() == null) {
+      return fallback;
+    }
+
+    CTStyle ctStyle = style.getCTStyle();
+    if (ctStyle.isSetRPr()) {
+      CTRPr rPr = ctStyle.getRPr();
+      if (rPr.sizeOfSzArray() > 0 && rPr.getSzArray(0).getVal() != null) {
+        Object val = rPr.getSzArray(0).getVal();
+        try {
+          return Integer.parseInt(val.toString());
+        } catch (NumberFormatException e) {
+          // fall through to basedOn/fallback
+        }
+      }
+    }
+
+    if (ctStyle.isSetBasedOn() && ctStyle.getBasedOn().getVal() != null) {
+      return resolveStyleFontSizeHalfPoints(styles, ctStyle.getBasedOn().getVal(), depth + 1, fallback);
+    }
+
+    return fallback;
   }
 
   /**
