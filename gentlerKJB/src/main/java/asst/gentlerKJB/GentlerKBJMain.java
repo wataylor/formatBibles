@@ -56,7 +56,8 @@ public class GentlerKBJMain {
       "count=70",
       "+help",
   };
- 
+  /** Increases printout */
+  public static boolean verbose = false;
   /**
    * @param args processed by the MainArgs class. 
    */
@@ -77,6 +78,7 @@ public class GentlerKBJMain {
     String outputPath = (String)carg.get("outputPath");
     String dictionaryFile = (String)carg.get("dictionary");
     String firstFile = (String)carg.get("firstFile");
+    verbose = carg.getBoolean("verbose");
     int count = carg.getInt("count");
 
     WorkbookManager wm = new WorkbookManager();
@@ -145,6 +147,7 @@ public class GentlerKBJMain {
 	  for (String line : lines) {
 	    out.add(upgradeLine(fileName.substring(0, 2), line, wm));
 	    verseCount++;
+	    if (verbose) { System.out.println(fileName + " " + verseCount); }
 	  }
 
 	  Path outputFile = outputDir.resolve(inputFile.getFileName());
