@@ -52,7 +52,7 @@ public class PassingItems {
    */
   public void setWords(String oldWord, String newWord) {
     this.oldWord = oldWord.toLowerCase().trim();
-    this.newWord = newWord.toLowerCase().trim();
+    this.newWord = newWord.trim();
   }
 
   /**
