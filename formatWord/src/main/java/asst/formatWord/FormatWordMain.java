@@ -53,7 +53,7 @@ import asst.hssf.WorkbookManager;
  */
 public class FormatWordMain {
   /** Control printing*/
-  public static boolean verbose = true;
+  public static boolean verbose = false;
 
   /** Describe the purpose of the command line args for the Help function.  */
   public static Map<String, String> argDescs = new HashMap<String, String>();
@@ -108,7 +108,7 @@ public class FormatWordMain {
       "+help",
   };
 
-  /** Footnotes must be created starting from 1 */
+  /** Footnotes must be created starting after footnotes in the template .docx */
   public static int footnoteCounter = 1;  // not thread safe
   /** Bookmarks must be created starting from 1 */
   public static int bookmarkCounter = 1;  // not thread safe
@@ -157,6 +157,7 @@ public class FormatWordMain {
     String templateFile = (String)carg.get("templateFile");
     String firstFile = (String)carg.get("firstFile");
     String newDocName = (String)carg.get("newDocName");
+    verbose = carg.getBoolean("verbose");
     int count = carg.getInt("count");
 
 
@@ -340,7 +341,7 @@ public class FormatWordMain {
       doc.close();
 
       // explanationWriter.close();
-      System.out.println("Wrote " + newDocName);
+      System.out.println("Wrote " + newDocName + " with " + verseCount + " verses.");
     } catch (Exception e) {
       System.out.println("ERROR " + e.getMessage());
       e.printStackTrace();
@@ -699,6 +700,8 @@ public class FormatWordMain {
       ix = verseText.indexOf(footnoteWord);
       if (ix < 0) {
 	footnoteData = null;
+	System.out.println("Not find " + footnoteWord + " for footnote in " + chapVerse
+	    + " " + verseText);
       } else {
 	footnoteWhere = ix + footnoteWord.length();
       }
