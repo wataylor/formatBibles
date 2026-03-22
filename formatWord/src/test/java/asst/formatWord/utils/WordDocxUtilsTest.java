@@ -50,6 +50,77 @@ public class WordDocxUtilsTest {
   }
 
   @Test
+  public void testFootnoteInsertedWithExistingTemplateFootnotes() {
+    // Simulate a template that already contains footnotes.
+    doc.createFootnote();
+    doc.createFootnote();
+
+    XWPFParagraph para = doc.createParagraph();
+    para.createRun().setText("Text with footnote");
+    WordDocxUtils.addFootnote(para, doc, "Inserted after template notes");
+
+    XWPFFootnote createdFootnote = doc.getFootnotes().get(doc.getFootnotes().size() - 1);
+    assertEquals("Inserted after template notes", createdFootnote.getParagraphs().get(0).getText());
+
+    XWPFRun refRun = para.getRuns().get(1);
+    assertTrue(refRun.getCTR().sizeOfFootnoteReferenceArray() > 0);
+    BigInteger refId = refRun.getCTR().getFootnoteReferenceArray(0).getId();
+    assertEquals(createdFootnote.getId(), refId);
+  }
+
+  @Test
+  public void testFootnoteTextItalicTagsAreProcessed() {
+    XWPFParagraph para = doc.createParagraph();
+    para.createRun().setText("Text with footnote");
+
+    WordDocxUtils.addFootnote(para, doc, "alpha <i>beta</i> gamma");
+
+    XWPFFootnote footnote = doc.getFootnotes().get(doc.getFootnotes().size() - 1);
+    XWPFParagraph fp = footnote.getParagraphs().get(0);
+    assertEquals("alpha beta gamma", fp.getText());
+    assertFalse(fp.getText().contains("<i>"));
+    assertFalse(fp.getText().contains("</i>"));
+    assertTrue(fp.getRuns().stream().anyMatch(r -> "beta".equals(r.text()) && r.isItalic()));
+  }
+
+  @Test
+  public void testFootnoteTextUppercaseItalicTagsAreProcessed() {
+    XWPFParagraph para = doc.createParagraph();
+    para.createRun().setText("Text with footnote");
+
+    WordDocxUtils.addFootnote(para, doc, "alpha <I>beta</I> gamma");
+
+    XWPFFootnote footnote = doc.getFootnotes().get(doc.getFootnotes().size() - 1);
+    XWPFParagraph fp = footnote.getParagraphs().get(0);
+    assertEquals("alpha beta gamma", fp.getText());
+    assertFalse(fp.getText().contains("<I>"));
+    assertFalse(fp.getText().contains("</I>"));
+    assertTrue(fp.getRuns().stream().anyMatch(r -> "beta".equals(r.text()) && r.isItalic()));
+  }
+
+  @Test
+  public void testFootnoteWithItalicTaggedTextSurvivesApplyItalicTags() {
+    // Simulate existing template notes so ids are non-trivial.
+    doc.createFootnote();
+    doc.createFootnote();
+
+    XWPFParagraph para = doc.createParagraph();
+    String verseText = "Start <i>middle</i> end";
+    int where = verseText.indexOf("middle") + "middle".length();
+
+    WordDocxUtils.addFootnote(para, doc, verseText, where, "FN text");
+    // Caller behavior in FormatWordMain: apply italic tags after building verse paragraph.
+    WordDocxUtils.applyItalicTags(para, doc);
+
+    assertEquals(-1, para.getText().indexOf("<i>"));
+    assertEquals(-1, para.getText().indexOf("</i>"));
+
+    boolean hasFootnoteReference = para.getRuns().stream()
+        .anyMatch(r -> r.getCTR().sizeOfFootnoteReferenceArray() > 0);
+    assertTrue(hasFootnoteReference, "Footnote reference XML must remain after italic processing");
+  }
+
+  @Test
   public void testBookmarkInserted() {
     WordDocxUtils.addBookmarkParagraph(doc, "Chapter1Start", "Chapter 1");
     XWPFParagraph para = doc.getParagraphs().get(0);

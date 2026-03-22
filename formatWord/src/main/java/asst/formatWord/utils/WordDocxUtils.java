@@ -27,7 +27,6 @@ import java.util.List;
  */
 public class WordDocxUtils {
 
-  private static int footnoteCounter = 1;  // not thread safe
   private static int bookmarkCounter = 1;  // not thread safe
 
   /** Superscript spell
@@ -53,19 +52,8 @@ public class WordDocxUtils {
    * @param doc The Word document
    * @param footnoteText The text of the footnote */
   public static void addFootnote(XWPFParagraph para, XWPFDocument doc, String footnoteText) {
-    XWPFRun run = para.createRun();
-    run.setStyle("FootnoteReference");
-    CTFtnEdnRef ref = run.getCTR().addNewFootnoteReference();
-    ref.setId(BigInteger.valueOf(footnoteCounter));
-
-    XWPFFootnote footnote = doc.createFootnote();
-    footnote.getCTFtnEdn().setId(BigInteger.valueOf(footnoteCounter));
-    XWPFParagraph footnotePara = footnote.createParagraph();
-    footnotePara.setStyle("FootnoteText");
-    footnotePara.createRun().setText(footnoteText);
-    applyItalicTags(footnotePara, doc);
-
-    footnoteCounter++;
+    XWPFFootnote footnote = createFootnoteWithText(doc, footnoteText);
+    addFootnoteReferenceRun(para, footnote.getId());
   }
 
   /** Add a paragraph with a footnote reference at a specified position in the text
@@ -87,69 +75,93 @@ public class WordDocxUtils {
 
     // If footnote goes at the beginning
     if (where == 0) {
-      // Create run with footnote reference
-      XWPFRun footnoteRun = para.createRun();
-      footnoteRun.setStyle("FootnoteReference");
-      CTFtnEdnRef ref = footnoteRun.getCTR().addNewFootnoteReference();
-      ref.setId(BigInteger.valueOf(footnoteCounter));
-
-      XWPFFootnote footnote = doc.createFootnote();
-      footnote.getCTFtnEdn().setId(BigInteger.valueOf(footnoteCounter));
-      XWPFParagraph footnotePara = footnote.createParagraph();
-      footnotePara.setStyle("FootnoteText");
-      footnotePara.createRun().setText(footnoteText);
-      footnoteCounter++;
+      XWPFFootnote footnote = createFootnoteWithText(doc, footnoteText);
+      addFootnoteReferenceRun(para, footnote.getId());
 
       // Add the text after the footnote
       if (text.length() > 0) {
-        XWPFRun textRun = para.createRun();
-        textRun.setText(text);
+        appendTextRespectingItalicTags(para, text);
       }
     }
     // If footnote goes at the end
     else if (where >= text.length()) {
       // Add the text first
-      XWPFRun textRun = para.createRun();
-      textRun.setText(text);
+      appendTextRespectingItalicTags(para, text);
 
-      // Then add footnote reference
-      XWPFRun footnoteRun = para.createRun();
-      footnoteRun.setStyle("FootnoteReference");
-      CTFtnEdnRef ref = footnoteRun.getCTR().addNewFootnoteReference();
-      ref.setId(BigInteger.valueOf(footnoteCounter));
-
-      XWPFFootnote footnote = doc.createFootnote();
-      footnote.getCTFtnEdn().setId(BigInteger.valueOf(footnoteCounter));
-      XWPFParagraph footnotePara = footnote.createParagraph();
-      footnotePara.setStyle("FootnoteText");
-      footnotePara.createRun().setText(footnoteText);
-      footnoteCounter++;
+      XWPFFootnote footnote = createFootnoteWithText(doc, footnoteText);
+      addFootnoteReferenceRun(para, footnote.getId());
     }
     // Footnote goes in the middle
     else {
       // Add text before the footnote
       String beforeText = text.substring(0, where);
-      XWPFRun beforeRun = para.createRun();
-      beforeRun.setText(beforeText);
+      appendTextRespectingItalicTags(para, beforeText);
 
-      // Add footnote reference
-      XWPFRun footnoteRun = para.createRun();
-      footnoteRun.setStyle("FootnoteReference");
-      CTFtnEdnRef ref = footnoteRun.getCTR().addNewFootnoteReference();
-      ref.setId(BigInteger.valueOf(footnoteCounter));
-
-      XWPFFootnote footnote = doc.createFootnote();
-      footnote.getCTFtnEdn().setId(BigInteger.valueOf(footnoteCounter));
-      XWPFParagraph footnotePara = footnote.createParagraph();
-      footnotePara.setStyle("FootnoteText");
-      footnotePara.createRun().setText(footnoteText);
-      footnoteCounter++;
+      XWPFFootnote footnote = createFootnoteWithText(doc, footnoteText);
+      addFootnoteReferenceRun(para, footnote.getId());
 
       // Add text after the footnote
       String afterText = text.substring(where);
-      XWPFRun afterRun = para.createRun();
-      afterRun.setText(afterText);
+      appendTextRespectingItalicTags(para, afterText);
     }
+  }
+
+  /** Append text runs and interpret <i>...</i> markers directly. */
+  private static void appendTextRespectingItalicTags(XWPFParagraph para, String text) {
+    if (text == null || text.isEmpty()) {
+      return;
+    }
+
+    boolean italic = false;
+    StringBuilder chunk = new StringBuilder();
+    int cursor = 0;
+
+    while (cursor < text.length()) {
+      if (startsWithIgnoreCase(text, cursor, "<i>")) {
+        addChunkRun(para, chunk, italic);
+        italic = true;
+        cursor += 3;
+        continue;
+      }
+      if (startsWithIgnoreCase(text, cursor, "</i>")) {
+        addChunkRun(para, chunk, italic);
+        italic = false;
+        cursor += 4;
+        continue;
+      }
+      chunk.append(text.charAt(cursor));
+      cursor++;
+    }
+    addChunkRun(para, chunk, italic);
+  }
+
+  /** Flush a text chunk into a run when non-empty. */
+  private static void addChunkRun(XWPFParagraph para, StringBuilder chunk, boolean italic) {
+    if (chunk.length() == 0) {
+      return;
+    }
+    XWPFRun run = para.createRun();
+    run.setItalic(italic);
+    run.setText(chunk.toString());
+    chunk.setLength(0);
+  }
+
+  /** Add a styled footnote-reference run that points at a specific footnote id. */
+  private static void addFootnoteReferenceRun(XWPFParagraph para, BigInteger footnoteId) {
+    XWPFRun run = para.createRun();
+    run.setStyle("FootnoteReference");
+    CTFtnEdnRef ref = run.getCTR().addNewFootnoteReference();
+    ref.setId(footnoteId);
+  }
+
+  /** Create a footnote using POI-assigned id and add visible text. */
+  private static XWPFFootnote createFootnoteWithText(XWPFDocument doc, String footnoteText) {
+    XWPFFootnote footnote = doc.createFootnote();
+    XWPFParagraph footnotePara = footnote.createParagraph();
+    footnotePara.setStyle("FootnoteText");
+    footnotePara.createRun().setText(footnoteText);
+    applyItalicTags(footnotePara, doc);
+    return footnote;
   }
 
   /**
@@ -186,7 +198,7 @@ public class WordDocxUtils {
       return;
     }
 
-    if (!text.contains("<i>") && !text.contains("</i>")) {
+    if (!containsIgnoreCase(text, "<i>") && !containsIgnoreCase(text, "</i>")) {
       return;
     }
 
@@ -198,7 +210,7 @@ public class WordDocxUtils {
 
     int cursor = 0;
     while (cursor < text.length()) {
-      if (text.startsWith("<i>", cursor)) {
+      if (startsWithIgnoreCase(text, cursor, "<i>")) {
         if (chunkText.length() > 0) {
           chunks.add(new RunChunk(chunkText.toString(), chunkSourceRPr, chunkItalic));
           chunkText.setLength(0);
@@ -208,7 +220,7 @@ public class WordDocxUtils {
         continue;
       }
 
-      if (text.startsWith("</i>", cursor)) {
+      if (startsWithIgnoreCase(text, cursor, "</i>")) {
         if (chunkText.length() > 0) {
           chunks.add(new RunChunk(chunkText.toString(), chunkSourceRPr, chunkItalic));
           chunkText.setLength(0);
@@ -266,6 +278,16 @@ public class WordDocxUtils {
       return null;
     }
     return (CTRPr) run.getCTR().getRPr().copy();
+  }
+
+  /** Case-insensitive prefix check at offset. */
+  private static boolean startsWithIgnoreCase(String text, int offset, String token) {
+    return text.regionMatches(true, offset, token, 0, token.length());
+  }
+
+  /** Case-insensitive contains check. */
+  private static boolean containsIgnoreCase(String text, String token) {
+    return text.toLowerCase().contains(token.toLowerCase());
   }
 
   /** Compare run properties object identity by underlying XML equality fallback. */
