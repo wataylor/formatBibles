@@ -16,13 +16,19 @@ The source code is in a public git repository [formatBibles](git@github.com:wata
 
 # Building All System Components
 
-The top-level **pom.xml** builds the Important Jars and the Support Jars.  
+The top-level **pom.xml** builds the Important Jars and the Support Jars. 
 
-# The Important Jars in the Repo
+# Useful Bash Commands
 
-This repo generates two executable .jar files: **gentlerKJB** and **formatWord**.  They're run with **java -jar <filename> <command args>**. I can never remember all the arguments, so each executable has a **+help** argument which documents the default argument values and exits.
+**notes.txt** is a list of bash commands to run the programs which produce printable bibles.  That file explains the expected directory structure so that you can run the programs after building them without having to dig too deeply into how they work.  You'll have to use different commands if you use a different directory structure.
 
-By a strange coincidence, the default values are what I need to run the programs based on where I chose to put the input and output files. **+help** is a default value so running the program with no arguments explains the documents and exists. If you want it to run, use **-help** to override the **+help**.
+The **GentleKJB8x11.docx** and **GentleKJB6x9.docx** template files and the **FontSizeUpdates.csv** font size setting file are in the shared folder.
+
+# Jars Files Produced From the Repo
+
+This repo generates two executable .jar files: **gentlerKJB** and **formatWord**.  They're run with **java -jar <filename> <command args>**. Each executable has a **+help** argument which documents the default argument values and exits.
+
+By a strange coincidence, the default values are what I need to run the programs based on where I put the input and output files. **+help** is a default value so running the program with no arguments explains the documents and exists. If you want it to run, use **-help** to override the **+help**.
 
 ## gentlerKJB
 
@@ -67,7 +73,7 @@ The current version updates fonts in these major locations:
 
 Command line:
 - `SetAllStylesToAFontMain [-verbose] "Font Name" "path\\to\\file.docx"`
-- `-verbose` enables detailed diagnostics for troubleshooting unusual Word behavior.
+- `+verbose` enables detailed diagnostics for troubleshooting unusual Word behavior.
 
 If you save a .docx as a .pdf, Word sometimes includes the Arial font for reasons known only to Microsoft but refuses to embed it.  Your .pdf file will be rejected by recipients who insist on embedded fonts.  In that case, using the Microsoft ""Print as PDF** printer may help because it seems to use only embeddable fonts.
 

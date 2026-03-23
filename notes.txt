@@ -1,0 +1,40 @@
+I store the templates and spreadsheet in /c/Sync/Biblical/KJV/Gentle/
+The raw Bible books are stored in /c/Temp/KJB/kjv-bibleprotector-com/
+Generated files with helping words inserted are stored in /c/Temp/KJB/
+
+Include all the helps in the specified books:
+time java -jar gentlerKJB/target/gentlerKJB-0.0.1-SNAPSHOT.jar "inputPath=C:\Temp\KJB\kjv-bibleprotector-com" firstFile=01GEN.TXT count=66 -help
+
+Format just 3 books for review during debugging
+time java -jar formatWord/target/formatWord-0.0.1-SNAPSHOT.jar "templateFile=C:\Sync\Biblical\KJV\Gentle\GentleKJB8x11.docx" count=3 -help
+
+Format the 6X9 John and Romans, delete the book of Acts using Outline View
+time java -jar formatWord/target/formatWord-0.0.1-SNAPSHOT.jar "templateFile=C:\Sync\Biblical\KJV\Gentle\GentleKJB6x9.docx" firstFile=43JOH.TXT newDocName=GentleKJBNewTestament.docx count=3 -help
+
+Set Gentle John an Romans to 12 pt, edit and save to GentleKJJohnRom.docx
+time java -jar fixFonts/target/fixFonts-1.0-SNAPSHOT-SetStyleFontSizesMain.jar "C:\Temp\KJB\GentleKJJohnRom.docx" "C:\Sync\Biblical\KJV\Gentle\FontSizeUpdates.csv" Size12
+
+Format 6X9 NT, edit, save, drop helps, save as GentleKJBNewTestamentPrint.docx
+time java -jar formatWord/target/formatWord-0.0.1-SNAPSHOT.jar "templateFile=C:\Sync\Biblical\KJV\Gentle\GentleKJB6x9.docx" firstFile=40MAT.TXT newDocName=GentleKJBNewTestament.docx -help
+
+Set the 6x9 New Testament to 12 point type - not need, template is good
+time java -jar fixFonts/target/fixFonts-1.0-SNAPSHOT-SetStyleFontSizesMain.jar "C:\Temp\KJB\GentleKJBNewTestament.docx" "C:\Sync\Biblical\KJV\Gentle\FontSizeUpdates.csv" Size12
+
+Format 8x11 NT, edit, save, drop helps, save GentleWideKJNewTestamentPrint.docx
+time java -jar formatWord/target/formatWord-0.0.1-SNAPSHOT.jar "templateFile=C:\Sync\Biblical\KJV\Gentle\GentleKJB8x11.docx" firstFile=40MAT.TXT newDocName=GentleWideKJNewTestament.docx -help
+
+Set large format (wide) New Testament to 12 point - not need, template good
+time java -jar fixFonts/target/fixFonts-1.0-SNAPSHOT-SetStyleFontSizesMain.jar "C:\Temp\KJB\GentleWideKJNewTestament.docx" "C:\Sync\Biblical\KJV\Gentle\FontSizeUpdates.csv" Size12
+
+Format 66 books, fix TOC & headers, save, drop help, save GentleKJB8ptPrint.docx
+time java -jar formatWord/target/formatWord-0.0.1-SNAPSHOT.jar "templateFile=C:\Sync\Biblical\KJV\Gentle\GentleKJB8x11.docx" firstFile=01GEN.TXT newDocName=GentleKJB.docx -help
+
+Fix the fonts to 8 point - the template has 12 point.  Fix TOC - fewer pages
+time java -jar fixFonts/target/fixFonts-1.0-SNAPSHOT-SetStyleFontSizesMain.jar "C:\Temp\KJB\GentleKJB8ptPrint.docx" "C:\Sync\Biblical\KJV\Gentle\FontSizeUpdates.csv" Size8
+
+find new files in the two directories.  Be SURE to update the timetag.
+find /c/Temp/KJB/ -name \*.docx -newer /c/Sync/Biblical/KJV/Gentle/timetag.txt
+find /c/Sync/Biblical/KJV/Gentle/ -type f -newer /c/Sync/Biblical/KJV/Gentle/timetag.txt
+
+touch /c/Sync/Biblical/KJV/Gentle/timetag.txt
+
