@@ -1,3 +1,6 @@
+From formatWord/target/classes:
+java -cp . asst/formatWord/snippets/CompareElectronicBiblesMain > /c/git/bibleDiffs.txt
+
 I store the templates and spreadsheet in /c/Sync/Biblical/KJV/Gentle/
 The raw Bible books are stored in /c/Temp/KJB/kjv-bibleprotector-com/
 Generated files with helping words inserted are stored in /c/Temp/KJB/
