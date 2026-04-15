@@ -1,12 +1,29 @@
 package asst.formatWord.utils;
 
-import org.apache.poi.xwpf.usermodel.*;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.*;
-import org.apache.xmlbeans.XmlCursor;
 import java.io.FileOutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.poi.xwpf.usermodel.VerticalAlign;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFFootnote;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.apache.poi.xwpf.usermodel.XWPFStyle;
+import org.apache.poi.xwpf.usermodel.XWPFStyles;
+import org.apache.xmlbeans.XmlCursor;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTBookmark;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTFldChar;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTFtnEdnRef;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTHyperlink;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTPPr;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTPicture;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTR;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTRPr;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTStyle;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.STFldCharType;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.STUnderline;
 
 /** A set of magic spells to add new items to a XWPFDocument doc.</p>
  *
@@ -382,10 +399,12 @@ public class WordDocxUtils {
    * @param headingText Text that will appear in TOC
    * If this is empty, the trailing text becomes the only paragraph added.
    * @param trailingText Additional text that won't appear in TOC
+   * @param trailStyle Paragraph style for the rest of the TOC entry
+   * verse description
    */
   public static void addSplitHeading2Para(XWPFDocument doc,
       String headingText,
-      String trailingText) {
+      String trailingText, String trailStyle) {
     if ((headingText != null) && (headingText.length() > 0)) {
       // First paragraph with Heading2 style
       XWPFParagraph headingPara = doc.createParagraph();
@@ -406,6 +425,7 @@ public class WordDocxUtils {
 
     // Second paragraph with the trailing text (no heading style)
     XWPFParagraph trailingPara = doc.createParagraph();
+    trailingPara.setStyle(trailStyle);
     XWPFRun trailingRun = trailingPara.createRun();
     trailingRun.setText(" " + trailingText);
     applyItalicTags(trailingPara, doc);
