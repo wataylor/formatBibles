@@ -394,7 +394,7 @@ public class FormatWordMain {
    * The last character might be an underscore.
    */
   public static void addParagraphOfChangeLinks(XWPFDocument doc, String change, String verseChangeList) {
-    // Create paragraph in style
+    // Create paragraph in verse style
     XWPFParagraph paragraph = doc.createParagraph();
     paragraph.setStyle(VERSE_STYLE);
 
