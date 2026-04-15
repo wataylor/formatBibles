@@ -180,6 +180,12 @@ public class GentlerKBJMain {
 	  }
 	}
       }
+      int missCount = reportUnusedWords(explanationWriter, wm);
+      if (missCount > 0) {
+	explanationWriter.println("There were " + missCount + " unused words.");
+      } else {
+	explanationWriter.println("There were no unused words.");	
+      }
       explanationWriter.close();
       System.out.println("Finished processing.");
     } catch (Exception e) {
@@ -192,6 +198,35 @@ public class GentlerKBJMain {
 	System.out.println("ERR closing work book " + e.getMessage());
       }
     }
+  }
+
+  /** Examine all the word changes and list those which found no
+   * words in the Bible
+   * @param explanationWriter Stream to report missed words
+   * @param wm Workbook manager to read the word sheet
+   * @return number of words which were not found.
+   */
+  public static int reportUnusedWords(PrintWriter explanationWriter,
+      WorkbookManager wm) {
+    int count = 0;
+    for (int i = wm.sheet.getFirstRowNum(); i <= wm.sheet.getLastRowNum(); i++) {
+      Row row = wm.sheet.getRow(i);
+      String oldWord = SSU.getFormattedCell(0, row);
+      if ((oldWord == null) || oldWord.startsWith("#")) { continue; }
+      String newWord = SSU.getFormattedCell(1, row);
+      // String verb = SSU.getFormattedCell(2, row);
+      if ((newWord == null) || (newWord.length() <= 0)) { continue; }
+      // Get keys in order
+      Set<String> keys = WordUpgradeUtils.wordChanges.keySet();
+      for (String key : keys) {
+	StringBuilder sb = WordUpgradeUtils.wordChanges.get(key);
+	if (sb == null) {
+	  count++;
+	  explanationWriter.println("Row " + (i + 1) + " " + key + " was not used.");
+	}
+      }
+    }
+    return count;
   }
 
   /** Given one verse, upgrade it by reading through the spreadsheet
