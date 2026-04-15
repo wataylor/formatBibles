@@ -21,7 +21,6 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
-import org.apache.poi.xwpf.usermodel.ParagraphAlignment;
 import org.apache.poi.xwpf.usermodel.VerticalAlign;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFFooter;
@@ -71,6 +70,7 @@ public class FormatWordMain {
   private static final BigInteger DEFAULT_MARGIN_HEADER = BigInteger.valueOf(720);  // 0.5 inch
   private static final BigInteger DEFAULT_MARGIN_FOOTER = BigInteger.valueOf(720);  // 0.5 inch
 
+  private static final String VERSE_STYLE = "Verse";
   /** Template page settings copied once and re-used for every generated section. */
   private static CTPageSz templatePageSz = null;
   private static CTPageMar templatePageMar = null;
@@ -394,9 +394,9 @@ public class FormatWordMain {
    * The last character might be an underscore.
    */
   public static void addParagraphOfChangeLinks(XWPFDocument doc, String change, String verseChangeList) {
-    // Create paragraph in style FAH
+    // Create paragraph in style
     XWPFParagraph paragraph = doc.createParagraph();
-    paragraph.setStyle("FAH");
+    paragraph.setStyle(VERSE_STYLE);
 
     // If change is non-empty, add it followed by a space
     if (change != null && !change.isEmpty()) {
@@ -620,7 +620,7 @@ public class FormatWordMain {
     // Add chapter comment if present
     if (chapComment != null && !chapComment.isEmpty()) {
       XWPFParagraph commentPara = doc.createParagraph();
-      commentPara.setStyle("FAH");
+      commentPara.setStyle(VERSE_STYLE);
       commentPara.createRun().setText(chapComment);
     }
   }
@@ -732,12 +732,12 @@ public class FormatWordMain {
       // If bookmark is not null, it is a bookmark that must be set.
       if (verseText.length() > 0) {
 	XWPFParagraph versePara = doc.createParagraph();
-	versePara.setStyle("FAH");
+	versePara.setStyle(VERSE_STYLE);
 
 	// Temporary workaround: insert chapter number as a character-styled run.
 	XWPFRun dropTextRun = versePara.createRun();
 	dropTextRun.setStyle("DropText");
-	dropTextRun.setText(chapterNum);
+	dropTextRun.setText(chapterNum + " ");
 
 	/* Add superscript verse number
 	XWPFRun verseNumRun = versePara.createRun();
@@ -766,7 +766,7 @@ public class FormatWordMain {
       // Add verse with superscript verse number
       if (verseText.length() > 0) {
 	XWPFParagraph versePara = doc.createParagraph();
-	versePara.setStyle("FAH");
+	versePara.setStyle(VERSE_STYLE);
 
 	// Add superscript verse number
 	XWPFRun verseNumRun = versePara.createRun();
@@ -805,7 +805,7 @@ public class FormatWordMain {
       return verseText;
     }
     String note = verseText.substring(2, ix); // Skip the <<
-    WordDocxUtils.addSplitHeading2Para(doc, "", note);
+    WordDocxUtils.addSplitHeading2Para(doc, "", note, VERSE_STYLE);
     return verseText.substring(ix+3); // skip >> and the space
   }
 
@@ -820,9 +820,9 @@ public class FormatWordMain {
     if (tocNote != null) {
       int ix = tocNote.indexOf("_");
       if (ix < 0) {
-    WordDocxUtils.addSplitHeading2Para(doc, tocNote, "");
+    WordDocxUtils.addSplitHeading2Para(doc, tocNote, "", VERSE_STYLE);
       } else {
-    WordDocxUtils.addSplitHeading2Para(doc, " " + tocNote.substring(0, ix), tocNote.substring(ix+1));
+    WordDocxUtils.addSplitHeading2Para(doc, " " + tocNote.substring(0, ix), tocNote.substring(ix+1), VERSE_STYLE);
       }
     }
   }
