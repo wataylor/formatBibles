@@ -12,7 +12,7 @@ Format just 3 books for review during debugging
 time java -jar formatWord/target/formatWord-0.0.1-SNAPSHOT.jar "templateFile=C:\Sync\Biblical\KJV\Gentle\21stCentKJB8x11.docx" count=3 -help
 
 Format the 6X9 John and Romans, delete the book of Acts using Outline View
-time java -jar formatWord/target/formatWord-0.0.1-SNAPSHOT.jar "templateFile=C:\Sync\Biblical\KJV\Gentle\21stCentKJB6x9.docx" firstFile=43JOH.TXT newDocName=21stCentKJBJohnRomans.docx count=3 -help
+time java -jar formatWord/target/formatWord-0.0.1-SNAPSHOT.jar "templateFile=C:\Sync\Biblical\KJV\Gentle\21stCentKJBJohnRomansTemplate.docx" firstFile=43JOH.TXT newDocName=21stCentKJBJohnRomans.docx count=3 -help
 
 Set Gentle John an Romans to 12 pt
 time java -jar fixFonts/target/fixFonts-1.0-SNAPSHOT-SetStyleFontSizesMain.jar "C:\Temp\KJB\21stCentKJBJohnRomans.docx" "C:\Sync\Biblical\KJV\Gentle\FontSizeUpdates.csv" Size12
