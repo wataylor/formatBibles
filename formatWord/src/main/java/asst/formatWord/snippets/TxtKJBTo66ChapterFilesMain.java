@@ -2,9 +2,12 @@ package asst.formatWord.snippets;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,7 +42,7 @@ public class TxtKJBTo66ChapterFilesMain {
    * the parameters if it is called with no arguments. */
   static final String[] DEFAULT_ARGS = {
       "-doIt", "-verbose",
-      "inputFile=/sync/Biblical/KJV/KJB-PCE-127.txt",
+      "inputFile=/sync/Biblical/KJV/KJB-PCE-127-With.txt",
       "outputPath=/temp/KJB/kjv-bibleprotector-com",
       "count=67", // Stop after 67 chapters
       "+help",
@@ -78,7 +81,10 @@ public class TxtKJBTo66ChapterFilesMain {
     int isp = 0; /* Index of ht first space in the line */
 
     try {
-      reader = new BufferedReader(new FileReader(inputFile));
+      reader = new BufferedReader(
+	  new InputStreamReader(
+	      new FileInputStream(inputFile),
+	      StandardCharsets.UTF_8));
       while ((line = reader.readLine()) != null) {
 	if (!line.startsWith(inputLineStart)) {
 	  isp = line.indexOf(" ");
@@ -91,8 +97,8 @@ public class TxtKJBTo66ChapterFilesMain {
 	  // Open the new output file in the same folder
 	  writer = new BufferedWriter(
 	      new OutputStreamWriter(
-		  new FileOutputStream(outputPath + "/" + outputFile),
-		  "UTF-8"));
+	          new FileOutputStream(outputPath + "/" + outputFile),
+	          StandardCharsets.UTF_8));
 	  lineHead = outputFile.substring(2, 5);
 	}
 	int ix = line.indexOf(" ", isp + 1); /* Need 2 spaces after the verse number */
