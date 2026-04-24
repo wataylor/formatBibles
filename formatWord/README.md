@@ -6,9 +6,11 @@ This program takes a bible formatted as one file per book.  It reads each verse,
 
 Each template has the introduction, defines styles, headers, and footers.  
 
-**GentleKJB6x9.docx** formats as a 6 inch X 9 inch book.
+**21stCentKJB6x9.docx** formats as a 6 inch X 9 inch book.
 
-**GentleKJB8x11.docx** formats as an 8.5 inch X 11 inch book.  The Old Testament is long enough to have to be formatted using this template.  The entire King James Bible can be formatted as one book, but it has to be in 8 point type to fit Amazon's page limit.
+**21stCentKJB8x11.docx** formats as an 8.5 inch X 11 inch book.  The Old Testament is long enough to have to be formatted using this template.  The entire King James Bible can be formatted as one book, but the **Verse** and **FootnoteText** styles must be set to 8 point type to fit Amazon's page limit.
+
+That leaves the Introduction, Table of Contents, and explanation on the back of the title page in 12 point.  You can use **SetStyleFontSizesMain** to adjust all the font sizes if that seems better to you.
 
 Font sizes of styles in a .docx can be set using **SetStyleFontSizesMain** in the adjacent fixFonts folder.  Changing sizes from list of styles and sizes is faster and more accurate than doing it by hand. 
 
@@ -48,6 +50,7 @@ produces **MAT 10:25 MAT 12:24 MAT 12:27 MAR 3:22 LUK 11:15 LUK 11:18 LUK 11:19*
 
 ## Snippets
 
+- **AddRTFParamarksToTextKJVMain**: Reads a text file containing Bible verses which include paragraph symbols and insert paragraph symbols in the matching verses in another file.  This file will then be split into one file per book with the chapter and verse numberings expected by the Bible formatting programs.
 - **CompareElectronicBiblesMain**: Compare two folders of book files to verify that all file names and all 31,102 chapter and verse numbers line up across both sources. This makes sure that either source can be used when formatting a gentle bible.
 - **DiscoverStylesMethodsMain**: Use reflection to list XWPFStyles methods to explore POI style APIs.
 - **ListBookmarkReferencesMain**: List bookmarks in a docx and the paragraphs that reference them (excluding _Toc).
