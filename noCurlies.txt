@@ -1,0 +1,21 @@
+Sub RemoveCurlyBracesContent()
+    With Selection.Find
+        .ClearFormatting
+        .Replacement.ClearFormatting
+        .Text = "\{*\}"
+        .Replacement.Text = ""
+        .Forward = True
+        .Wrap = wdFindContinue
+        .Format = False
+        .MatchWildcards = True
+    End With
+    Selection.Find.Execute Replace:=wdReplaceAll
+End Sub
+
+Open VBA editor Alt + F11
+Click the panel, then Insert -> MOdule
+Paste in the code
+Run the macro F5
+
+\] for a ]
+
